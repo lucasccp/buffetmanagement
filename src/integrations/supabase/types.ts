@@ -14,16 +14,327 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      custos_evento: {
+        Row: {
+          categoria: Database["public"]["Enums"]["custo_categoria"]
+          data_custo: string | null
+          descricao: string
+          evento_id: string
+          id: string
+          valor: number
+        }
+        Insert: {
+          categoria: Database["public"]["Enums"]["custo_categoria"]
+          data_custo?: string | null
+          descricao: string
+          evento_id: string
+          id?: string
+          valor: number
+        }
+        Update: {
+          categoria?: Database["public"]["Enums"]["custo_categoria"]
+          data_custo?: string | null
+          descricao?: string
+          evento_id?: string
+          id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custos_evento_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipe: {
+        Row: {
+          custo_por_evento: number | null
+          funcao: string | null
+          id: string
+          nome: string
+          telefone: string | null
+        }
+        Insert: {
+          custo_por_evento?: number | null
+          funcao?: string | null
+          id?: string
+          nome: string
+          telefone?: string | null
+        }
+        Update: {
+          custo_por_evento?: number | null
+          funcao?: string | null
+          id?: string
+          nome?: string
+          telefone?: string | null
+        }
+        Relationships: []
+      }
+      evento_cardapio: {
+        Row: {
+          evento_id: string
+          id: string
+          item_id: string
+          quantidade: number
+        }
+        Insert: {
+          evento_id: string
+          id?: string
+          item_id: string
+          quantidade: number
+        }
+        Update: {
+          evento_id?: string
+          id?: string
+          item_id?: string
+          quantidade?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_cardapio_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evento_cardapio_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "itens_cardapio"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      evento_equipe: {
+        Row: {
+          equipe_id: string
+          evento_id: string
+          id: string
+          valor_pago: number | null
+        }
+        Insert: {
+          equipe_id: string
+          evento_id: string
+          id?: string
+          valor_pago?: number | null
+        }
+        Update: {
+          equipe_id?: string
+          evento_id?: string
+          id?: string
+          valor_pago?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "evento_equipe_equipe_id_fkey"
+            columns: ["equipe_id"]
+            isOneToOne: false
+            referencedRelation: "equipe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "evento_equipe_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      eventos: {
+        Row: {
+          created_at: string
+          data_evento: string | null
+          horario_fim: string | null
+          horario_inicio: string | null
+          id: string
+          lead_id: string | null
+          local: string | null
+          nome_evento: string
+          numero_convidados: number | null
+          observacoes: string | null
+          status: Database["public"]["Enums"]["evento_status"]
+          tipo_evento: string | null
+          valor_total: number | null
+        }
+        Insert: {
+          created_at?: string
+          data_evento?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          lead_id?: string | null
+          local?: string | null
+          nome_evento: string
+          numero_convidados?: number | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["evento_status"]
+          tipo_evento?: string | null
+          valor_total?: number | null
+        }
+        Update: {
+          created_at?: string
+          data_evento?: string | null
+          horario_fim?: string | null
+          horario_inicio?: string | null
+          id?: string
+          lead_id?: string | null
+          local?: string | null
+          nome_evento?: string
+          numero_convidados?: number | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["evento_status"]
+          tipo_evento?: string | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eventos_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      faturamento_evento: {
+        Row: {
+          data_pagamento: string | null
+          evento_id: string
+          id: string
+          status_pagamento: Database["public"]["Enums"]["pagamento_status"]
+          valor_recebido: number
+          valor_total: number
+        }
+        Insert: {
+          data_pagamento?: string | null
+          evento_id: string
+          id?: string
+          status_pagamento?: Database["public"]["Enums"]["pagamento_status"]
+          valor_recebido?: number
+          valor_total: number
+        }
+        Update: {
+          data_pagamento?: string | null
+          evento_id?: string
+          id?: string
+          status_pagamento?: Database["public"]["Enums"]["pagamento_status"]
+          valor_recebido?: number
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faturamento_evento_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      itens_cardapio: {
+        Row: {
+          custo_unitario: number
+          id: string
+          nome: string
+          tipo: Database["public"]["Enums"]["item_tipo"]
+        }
+        Insert: {
+          custo_unitario: number
+          id?: string
+          nome: string
+          tipo: Database["public"]["Enums"]["item_tipo"]
+        }
+        Update: {
+          custo_unitario?: number
+          id?: string
+          nome?: string
+          tipo?: Database["public"]["Enums"]["item_tipo"]
+        }
+        Relationships: []
+      }
+      leads: {
+        Row: {
+          created_at: string
+          data_prevista: string | null
+          email: string | null
+          id: string
+          nome: string
+          numero_convidados: number | null
+          observacoes: string | null
+          status: Database["public"]["Enums"]["lead_status"]
+          telefone: string | null
+          tipo_evento: string | null
+        }
+        Insert: {
+          created_at?: string
+          data_prevista?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          numero_convidados?: number | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          telefone?: string | null
+          tipo_evento?: string | null
+        }
+        Update: {
+          created_at?: string
+          data_prevista?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          numero_convidados?: number | null
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["lead_status"]
+          telefone?: string | null
+          tipo_evento?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      dashboard_metrics: {
+        Row: {
+          custo_total: number | null
+          faturamento_total: number | null
+          ticket_medio: number | null
+          total_eventos: number | null
+        }
+        Relationships: []
+      }
+      eventos_por_status: {
+        Row: {
+          status: Database["public"]["Enums"]["evento_status"] | null
+          total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      calcular_custos_evento: { Args: { p_evento_id: string }; Returns: number }
     }
     Enums: {
-      [_ in never]: never
+      custo_categoria:
+        | "alimento"
+        | "bebida"
+        | "equipe"
+        | "transporte"
+        | "aluguel"
+        | "outros"
+      evento_status: "planejado" | "confirmado" | "realizado" | "cancelado"
+      item_tipo: "comida" | "bebida" | "sobremesa"
+      lead_status:
+        | "novo"
+        | "contato_realizado"
+        | "proposta_enviada"
+        | "fechado"
+        | "perdido"
+      pagamento_status: "pendente" | "parcial" | "pago"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +461,25 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      custo_categoria: [
+        "alimento",
+        "bebida",
+        "equipe",
+        "transporte",
+        "aluguel",
+        "outros",
+      ],
+      evento_status: ["planejado", "confirmado", "realizado", "cancelado"],
+      item_tipo: ["comida", "bebida", "sobremesa"],
+      lead_status: [
+        "novo",
+        "contato_realizado",
+        "proposta_enviada",
+        "fechado",
+        "perdido",
+      ],
+      pagamento_status: ["pendente", "parcial", "pago"],
+    },
   },
 } as const
