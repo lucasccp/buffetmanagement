@@ -317,6 +317,32 @@ export type Database = {
     }
     Functions: {
       calcular_custos_evento: { Args: { p_evento_id: string }; Returns: number }
+      get_dashboard_filtrado: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_evento_id?: string
+        }
+        Returns: {
+          custo_total: number
+          faturamento_total: number
+          ticket_medio: number
+          total_eventos: number
+        }[]
+      }
+      get_financeiro_mensal: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_evento_id?: string
+        }
+        Returns: {
+          custo_mes: number
+          faturamento_mes: number
+          lucro_mes: number
+          mes: string
+        }[]
+      }
     }
     Enums: {
       custo_categoria:
