@@ -64,7 +64,7 @@ export default function Dashboard() {
   const filterArgs = useMemo(() => ({
     p_data_inicio: dataInicio ? format(dataInicio, "yyyy-MM-dd") : undefined,
     p_data_fim: dataFim ? format(dataFim, "yyyy-MM-dd") : undefined,
-    p_evento_id: eventoId || undefined,
+    p_evento_id: eventoId && eventoId !== "all" ? eventoId : undefined,
   }), [dataInicio, dataFim, eventoId]);
 
   const hasFilters = dataInicio || dataFim || eventoId;
