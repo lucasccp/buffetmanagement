@@ -91,7 +91,7 @@ export default function EventoDetail() {
           <TabsTrigger value="equipe">Equipe</TabsTrigger>
           <TabsTrigger value="custos">Custos</TabsTrigger>
           <TabsTrigger value="cardapio">Cardápio</TabsTrigger>
-          <TabsTrigger value="faturamento">Faturamento</TabsTrigger>
+          <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="geral"><GeralTab evento={evento} onUpdate={(v) => updateEvento.mutate(v)} /></TabsContent>
