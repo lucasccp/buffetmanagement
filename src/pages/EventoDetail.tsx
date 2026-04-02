@@ -40,17 +40,17 @@ export default function EventoDetail() {
     },
   });
 
-  const { data: faturamento } = useQuery({
-    queryKey: ["faturamento", id],
+  const { data: pagamentos = [] } = useQuery({
+    queryKey: ["pagamentos_evento", id],
     queryFn: async () => {
-      const { data, error } = await supabase.from("faturamento_evento").select("*").eq("evento_id", id!);
+      const { data, error } = await supabase.from("pagamentos_evento").select("*").eq("evento_id", id!).order("data_planejada");
       if (error) throw error;
       return data;
     },
   });
 
-  const faturamentoTotal = faturamento?.reduce((sum, f) => sum + (f.valor_total ?? 0), 0) ?? 0;
-  const lucro = faturamentoTotal - (custoTotal ?? 0);
+  const pagamentoTotal = pagamentos?.filter(p => p.status === 'pago').reduce((sum, p) => sum + p.valor, 0) ?? 0;
+  const lucro = pagamentoTotal - (custoTotal ?? 0);
 
   const updateEvento = useMutation({
     mutationFn: async (values: Partial<TablesInsert<"eventos">>) => {
