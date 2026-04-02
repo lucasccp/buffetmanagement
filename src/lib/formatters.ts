@@ -31,10 +31,9 @@ export const custoCategLabels: Record<string, string> = {
   outros: "Outros",
 };
 
-export const itemTipoLabels: Record<string, string> = {
-  comida: "Comida",
-  bebida: "Bebida",
-  sobremesa: "Sobremesa",
+export const movimentacaoTipoLabels: Record<string, string> = {
+  entrada: "Entrada",
+  saida: "Saída",
 };
 
 export const pagamentoStatusLabels: Record<string, string> = {

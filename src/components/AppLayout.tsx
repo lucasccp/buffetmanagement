@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet } from "lucide-react";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -7,6 +7,7 @@ const navItems = [
   { to: "/eventos", label: "Eventos", icon: CalendarDays },
   { to: "/equipe", label: "Equipe", icon: UsersRound },
   { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed },
+  { to: "/caixa", label: "Caixa", icon: Wallet },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

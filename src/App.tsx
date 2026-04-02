@@ -29,6 +29,7 @@ const App = () => (
           <Route path="/eventos/:id" element={<EventoDetail />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/cardapio" element={<Cardapio />} />
+          <Route path="/caixa" element={<Caixa />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

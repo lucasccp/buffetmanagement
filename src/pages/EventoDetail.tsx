@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
-import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, itemTipoLabels, pagamentoStatusLabels } from "@/lib/formatters";
+import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoStatusLabels } from "@/lib/formatters";
 import { Plus, Trash2 } from "lucide-react";
 
 export default function EventoDetail() {
@@ -319,22 +319,21 @@ function CustosTab({ eventoId }: { eventoId: string }) {
 
 function CardapioTab({ eventoId }: { eventoId: string }) {
   const qc = useQueryClient();
-  const [itemId, setItemId] = useState("");
-  const [qtd, setQtd] = useState("");
+  const [cardapioId, setCardapioId] = useState("");
 
-  const { data: eventoCardapio = [] } = useQuery({
+  const { data: eventoCardapios = [] } = useQuery({
     queryKey: ["evento_cardapio", eventoId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("evento_cardapio").select("*, itens_cardapio(*)").eq("evento_id", eventoId);
+      const { data, error } = await supabase.from("evento_cardapio").select("*, cardapios(*, cardapio_itens(*))").eq("evento_id", eventoId);
       if (error) throw error;
       return data;
     },
   });
 
-  const { data: itens = [] } = useQuery({
-    queryKey: ["itens_cardapio"],
+  const { data: cardapiosList = [] } = useQuery({
+    queryKey: ["cardapios"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("itens_cardapio").select("*");
+      const { data, error } = await supabase.from("cardapios").select("*").order("nome");
       if (error) throw error;
       return data;
     },
@@ -344,16 +343,14 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
     mutationFn: async () => {
       const { error } = await supabase.from("evento_cardapio").insert({
         evento_id: eventoId,
-        item_id: itemId,
-        quantidade: parseInt(qtd),
+        cardapio_id: cardapioId,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["evento_cardapio", eventoId] });
-      qc.invalidateQueries({ queryKey: ["custo_total", eventoId] });
-      setItemId(""); setQtd("");
-      toast.success("Item adicionado!");
+      setCardapioId("");
+      toast.success("Cardápio vinculado!");
     },
   });
 
@@ -364,7 +361,6 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["evento_cardapio", eventoId] });
-      qc.invalidateQueries({ queryKey: ["custo_total", eventoId] });
     },
   });
 
@@ -373,30 +369,39 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
       <CardHeader><CardTitle>Cardápio do Evento</CardTitle></CardHeader>
       <CardContent>
         <div className="flex gap-2 mb-4">
-          <Select value={itemId} onValueChange={setItemId}>
-            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Selecione item" /></SelectTrigger>
+          <Select value={cardapioId} onValueChange={setCardapioId}>
+            <SelectTrigger className="w-[250px]"><SelectValue placeholder="Selecione um cardápio" /></SelectTrigger>
             <SelectContent>
-              {itens.map((i) => <SelectItem key={i.id} value={i.id}>{i.nome} ({itemTipoLabels[i.tipo]})</SelectItem>)}
+              {cardapiosList.map((c) => (
+                <SelectItem key={c.id} value={c.id}>{c.nome} - {formatCurrency(c.valor_sugerido_pp)}/pessoa</SelectItem>
+              ))}
             </SelectContent>
           </Select>
-          <Input placeholder="Qtd" type="number" min="1" value={qtd} onChange={(e) => setQtd(e.target.value)} className="w-24" />
-          <Button onClick={() => addMut.mutate()} disabled={!itemId || !qtd}><Plus className="h-4 w-4" /></Button>
+          <Button onClick={() => addMut.mutate()} disabled={!cardapioId}><Plus className="h-4 w-4" /></Button>
         </div>
-        <Table>
-          <TableHeader><TableRow><TableHead>Item</TableHead><TableHead>Tipo</TableHead><TableHead>Qtd</TableHead><TableHead>Custo Unit.</TableHead><TableHead>Subtotal</TableHead><TableHead></TableHead></TableRow></TableHeader>
-          <TableBody>
-            {eventoCardapio.map((ec: any) => (
-              <TableRow key={ec.id}>
-                <TableCell>{ec.itens_cardapio?.nome}</TableCell>
-                <TableCell><Badge variant="outline">{itemTipoLabels[ec.itens_cardapio?.tipo]}</Badge></TableCell>
-                <TableCell>{ec.quantidade}</TableCell>
-                <TableCell>{formatCurrency(ec.itens_cardapio?.custo_unitario)}</TableCell>
-                <TableCell>{formatCurrency(ec.quantidade * (ec.itens_cardapio?.custo_unitario ?? 0))}</TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => removeMut.mutate(ec.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="space-y-4">
+          {eventoCardapios.map((ec: any) => (
+            <div key={ec.id} className="border rounded-lg p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <h4 className="font-medium">{ec.cardapios?.nome}</h4>
+                  <p className="text-sm text-muted-foreground">{formatCurrency(ec.cardapios?.valor_sugerido_pp)}/pessoa</p>
+                </div>
+                <Button size="icon" variant="ghost" onClick={() => removeMut.mutate(ec.id)}>
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {ec.cardapios?.cardapio_itens?.map((i: any) => (
+                  <Badge key={i.id} variant="outline">{i.nome}</Badge>
+                ))}
+              </div>
+            </div>
+          ))}
+          {eventoCardapios.length === 0 && (
+            <p className="text-center text-muted-foreground py-4">Nenhum cardápio vinculado</p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );
