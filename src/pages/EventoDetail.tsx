@@ -407,95 +407,134 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
   );
 }
 
-function FaturamentoTab({ eventoId }: { eventoId: string }) {
+function PagamentosTab({ eventoId }: { eventoId: string }) {
   const qc = useQueryClient();
-  const [form, setForm] = useState<Partial<TablesInsert<"faturamento_evento">>>({});
+  const [valor, setValor] = useState("");
+  const [dataPlanejada, setDataPlanejada] = useState("");
+  const [dataPagamento, setDataPagamento] = useState("");
+  const [metodo, setMetodo] = useState("pix");
+  const [status, setStatus] = useState<"planejado" | "pago">("planejado");
 
-  const { data: faturamentos = [] } = useQuery({
-    queryKey: ["faturamento", eventoId],
+  const { data: pagamentos = [] } = useQuery({
+    queryKey: ["pagamentos_evento", eventoId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("faturamento_evento").select("*").eq("evento_id", eventoId);
+      const { data, error } = await supabase.from("pagamentos_evento").select("*").eq("evento_id", eventoId).order("data_planejada");
       if (error) throw error;
       return data;
     },
   });
 
+  const totalPago = pagamentos.filter(p => p.status === "pago").reduce((s, p) => s + p.valor, 0);
+  const totalPlanejado = pagamentos.reduce((s, p) => s + p.valor, 0);
+
   const addMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("faturamento_evento").insert({
+      const { error } = await supabase.from("pagamentos_evento").insert({
         evento_id: eventoId,
-        valor_total: form.valor_total!,
-        valor_recebido: form.valor_recebido ?? 0,
-        status_pagamento: form.status_pagamento ?? "pendente",
-        data_pagamento: form.data_pagamento,
+        valor: parseFloat(valor),
+        data_planejada: dataPlanejada,
+        data_pagamento: dataPagamento || null,
+        metodo_pagamento: metodo as any,
+        status: status,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["faturamento", eventoId] });
-      qc.invalidateQueries({ queryKey: ["dashboard_metrics"] });
-      setForm({});
-      toast.success("Faturamento registrado!");
+      qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
+      setValor(""); setDataPlanejada(""); setDataPagamento(""); setMetodo("pix"); setStatus("planejado");
+      toast.success("Pagamento registrado!");
     },
   });
 
   const updateStatus = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: Enums<"pagamento_status"> }) => {
-      const { error } = await supabase.from("faturamento_evento").update({ status_pagamento: status }).eq("id", id);
+    mutationFn: async ({ id, newStatus }: { id: string; newStatus: "planejado" | "pago" }) => {
+      const updateData: any = { status: newStatus };
+      if (newStatus === "pago" && !pagamentos.find(p => p.id === id)?.data_pagamento) {
+        updateData.data_pagamento = new Date().toISOString().split("T")[0];
+      }
+      const { error } = await supabase.from("pagamentos_evento").update(updateData).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["faturamento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
       toast.success("Status atualizado!");
     },
   });
 
   const removeMut = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("faturamento_evento").delete().eq("id", id);
+      const { error } = await supabase.from("pagamentos_evento").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["faturamento", eventoId] });
-      qc.invalidateQueries({ queryKey: ["dashboard_metrics"] });
+      qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] });
     },
   });
 
   return (
     <Card className="mt-4">
-      <CardHeader><CardTitle>Faturamento do Evento</CardTitle></CardHeader>
+      <CardHeader>
+        <CardTitle className="flex items-center justify-between">
+          Pagamentos do Evento
+          <div className="flex gap-4 text-sm font-normal">
+            <span className="text-muted-foreground">Total: {formatCurrency(totalPlanejado)}</span>
+            <span className="text-success">Recebido: {formatCurrency(totalPago)}</span>
+          </div>
+        </CardTitle>
+      </CardHeader>
       <CardContent>
         <div className="flex gap-2 mb-4 flex-wrap">
-          <Input placeholder="Valor Total" type="number" step="0.01" value={form.valor_total ?? ""} onChange={(e) => setForm({ ...form, valor_total: parseFloat(e.target.value) })} className="w-36" />
-          <Input placeholder="Valor Recebido" type="number" step="0.01" value={form.valor_recebido ?? ""} onChange={(e) => setForm({ ...form, valor_recebido: parseFloat(e.target.value) })} className="w-36" />
-          <Select value={form.status_pagamento ?? "pendente"} onValueChange={(v) => setForm({ ...form, status_pagamento: v as any })}>
-            <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+          <Input placeholder="Valor" type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} className="w-28" />
+          <Input type="date" value={dataPlanejada} onChange={(e) => setDataPlanejada(e.target.value)} className="w-40" title="Data planejada" />
+          <Input type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} className="w-40" title="Data pagamento" />
+          <Select value={metodo} onValueChange={setMetodo}>
+            <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
             <SelectContent>
-              {Constants.public.Enums.pagamento_status.map((s) => <SelectItem key={s} value={s}>{pagamentoStatusLabels[s]}</SelectItem>)}
+              {Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
             </SelectContent>
           </Select>
-          <Input type="date" value={form.data_pagamento ?? ""} onChange={(e) => setForm({ ...form, data_pagamento: e.target.value })} className="w-40" />
-          <Button onClick={() => addMut.mutate()} disabled={!form.valor_total}><Plus className="h-4 w-4" /></Button>
+          <Select value={status} onValueChange={(v) => setStatus(v as "planejado" | "pago")}>
+            <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button onClick={() => addMut.mutate()} disabled={!valor || !dataPlanejada}><Plus className="h-4 w-4" /></Button>
         </div>
         <Table>
-          <TableHeader><TableRow><TableHead>Valor Total</TableHead><TableHead>Recebido</TableHead><TableHead>Status</TableHead><TableHead>Data</TableHead><TableHead></TableHead></TableRow></TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Valor</TableHead>
+              <TableHead>Data Planejada</TableHead>
+              <TableHead>Data Pagamento</TableHead>
+              <TableHead>Método</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead></TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
-            {faturamentos.map((f) => (
-              <TableRow key={f.id}>
-                <TableCell>{formatCurrency(f.valor_total)}</TableCell>
-                <TableCell>{formatCurrency(f.valor_recebido)}</TableCell>
+            {pagamentos.map((p) => (
+              <TableRow key={p.id}>
+                <TableCell className="font-medium">{formatCurrency(p.valor)}</TableCell>
+                <TableCell>{formatDate(p.data_planejada)}</TableCell>
+                <TableCell>{formatDate(p.data_pagamento)}</TableCell>
+                <TableCell>{metodoPagamentoLabels[p.metodo_pagamento] ?? p.metodo_pagamento}</TableCell>
                 <TableCell>
-                  <Select value={f.status_pagamento} onValueChange={(v) => updateStatus.mutate({ id: f.id, status: v as Enums<"pagamento_status"> })}>
+                  <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, newStatus: v as "planejado" | "pago" })}>
                     <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {Constants.public.Enums.pagamento_status.map((s) => <SelectItem key={s} value={s}>{pagamentoStatusLabels[s]}</SelectItem>)}
+                      {Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </TableCell>
-                <TableCell>{formatDate(f.data_pagamento)}</TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => removeMut.mutate(f.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                <TableCell><Button size="icon" variant="ghost" onClick={() => removeMut.mutate(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
               </TableRow>
             ))}
+            {pagamentos.length === 0 && (
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4">Nenhum pagamento registrado</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>
