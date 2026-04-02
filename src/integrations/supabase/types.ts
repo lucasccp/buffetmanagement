@@ -360,6 +360,47 @@ export type Database = {
         }
         Relationships: []
       }
+      pagamentos_evento: {
+        Row: {
+          created_at: string
+          data_pagamento: string | null
+          data_planejada: string
+          evento_id: string
+          id: string
+          metodo_pagamento: Database["public"]["Enums"]["metodo_pagamento"]
+          status: Database["public"]["Enums"]["pagamento_evento_status"]
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string | null
+          data_planejada: string
+          evento_id: string
+          id?: string
+          metodo_pagamento?: Database["public"]["Enums"]["metodo_pagamento"]
+          status?: Database["public"]["Enums"]["pagamento_evento_status"]
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string | null
+          data_planejada?: string
+          evento_id?: string
+          id?: string
+          metodo_pagamento?: Database["public"]["Enums"]["metodo_pagamento"]
+          status?: Database["public"]["Enums"]["pagamento_evento_status"]
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_evento_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       dashboard_metrics: {
@@ -423,7 +464,16 @@ export type Database = {
         | "proposta_enviada"
         | "fechado"
         | "perdido"
+      metodo_pagamento:
+        | "pix"
+        | "dinheiro"
+        | "cartao_credito"
+        | "cartao_debito"
+        | "transferencia"
+        | "boleto"
+        | "outro"
       movimentacao_tipo: "entrada" | "saida"
+      pagamento_evento_status: "planejado" | "pago"
       pagamento_status: "pendente" | "parcial" | "pago"
     }
     CompositeTypes: {
@@ -568,7 +618,17 @@ export const Constants = {
         "fechado",
         "perdido",
       ],
+      metodo_pagamento: [
+        "pix",
+        "dinheiro",
+        "cartao_credito",
+        "cartao_debito",
+        "transferencia",
+        "boleto",
+        "outro",
+      ],
       movimentacao_tipo: ["entrada", "saida"],
+      pagamento_evento_status: ["planejado", "pago"],
       pagamento_status: ["pendente", "parcial", "pago"],
     },
   },
