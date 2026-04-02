@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
-import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoStatusLabels } from "@/lib/formatters";
+import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels } from "@/lib/formatters";
 import { Plus, Trash2 } from "lucide-react";
 
 export default function EventoDetail() {

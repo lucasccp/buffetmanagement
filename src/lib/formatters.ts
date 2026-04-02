@@ -41,3 +41,18 @@ export const pagamentoStatusLabels: Record<string, string> = {
   parcial: "Parcial",
   pago: "Pago",
 };
+
+export const pagamentoEventoStatusLabels: Record<string, string> = {
+  planejado: "Planejado",
+  pago: "Pago",
+};
+
+export const metodoPagamentoLabels: Record<string, string> = {
+  pix: "PIX",
+  dinheiro: "Dinheiro",
+  cartao_credito: "Cartão de Crédito",
+  cartao_debito: "Cartão de Débito",
+  transferencia: "Transferência",
+  boleto: "Boleto",
+  outro: "Outro",
+};
