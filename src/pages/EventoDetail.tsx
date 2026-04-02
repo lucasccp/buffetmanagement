@@ -75,8 +75,8 @@ export default function EventoDetail() {
             <div className="text-lg font-bold text-destructive">{formatCurrency(custoTotal)}</div>
           </Card>
           <Card className="px-4 py-2">
-            <div className="text-xs text-muted-foreground">Faturamento</div>
-            <div className="text-lg font-bold text-success">{formatCurrency(faturamentoTotal)}</div>
+            <div className="text-xs text-muted-foreground">Recebido</div>
+            <div className="text-lg font-bold text-success">{formatCurrency(pagamentoTotal)}</div>
           </Card>
           <Card className="px-4 py-2">
             <div className="text-xs text-muted-foreground">Lucro</div>
