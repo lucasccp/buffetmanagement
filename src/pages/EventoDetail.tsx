@@ -266,6 +266,7 @@ function CustosTab({ eventoId }: { eventoId: string }) {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["custos_evento", eventoId] });
       qc.invalidateQueries({ queryKey: ["custo_total", eventoId] });
+      qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
       setForm({});
       toast.success("Custo adicionado!");
     },
