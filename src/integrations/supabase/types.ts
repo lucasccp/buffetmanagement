@@ -14,6 +14,94 @@ export type Database = {
   }
   public: {
     Tables: {
+      caixa_movimentacoes: {
+        Row: {
+          automatica: boolean
+          created_at: string
+          data: string
+          descricao: string
+          evento_id: string | null
+          id: string
+          nota_fiscal_url: string | null
+          tipo: Database["public"]["Enums"]["movimentacao_tipo"]
+          valor: number
+        }
+        Insert: {
+          automatica?: boolean
+          created_at?: string
+          data?: string
+          descricao: string
+          evento_id?: string | null
+          id?: string
+          nota_fiscal_url?: string | null
+          tipo: Database["public"]["Enums"]["movimentacao_tipo"]
+          valor: number
+        }
+        Update: {
+          automatica?: boolean
+          created_at?: string
+          data?: string
+          descricao?: string
+          evento_id?: string | null
+          id?: string
+          nota_fiscal_url?: string | null
+          tipo?: Database["public"]["Enums"]["movimentacao_tipo"]
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caixa_movimentacoes_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cardapio_itens: {
+        Row: {
+          cardapio_id: string
+          id: string
+          nome: string
+        }
+        Insert: {
+          cardapio_id: string
+          id?: string
+          nome: string
+        }
+        Update: {
+          cardapio_id?: string
+          id?: string
+          nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cardapio_itens_cardapio_id_fkey"
+            columns: ["cardapio_id"]
+            isOneToOne: false
+            referencedRelation: "cardapios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cardapios: {
+        Row: {
+          id: string
+          nome: string
+          valor_sugerido_pp: number
+        }
+        Insert: {
+          id?: string
+          nome: string
+          valor_sugerido_pp?: number
+        }
+        Update: {
+          id?: string
+          nome?: string
+          valor_sugerido_pp?: number
+        }
+        Relationships: []
+      }
       custos_evento: {
         Row: {
           categoria: Database["public"]["Enums"]["custo_categoria"]
@@ -75,36 +163,33 @@ export type Database = {
       }
       evento_cardapio: {
         Row: {
+          cardapio_id: string
           evento_id: string
           id: string
-          item_id: string
-          quantidade: number
         }
         Insert: {
+          cardapio_id: string
           evento_id: string
           id?: string
-          item_id: string
-          quantidade: number
         }
         Update: {
+          cardapio_id?: string
           evento_id?: string
           id?: string
-          item_id?: string
-          quantidade?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "evento_cardapio_cardapio_id_fkey"
+            columns: ["cardapio_id"]
+            isOneToOne: false
+            referencedRelation: "cardapios"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "evento_cardapio_evento_id_fkey"
             columns: ["evento_id"]
             isOneToOne: false
             referencedRelation: "eventos"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "evento_cardapio_item_id_fkey"
-            columns: ["item_id"]
-            isOneToOne: false
-            referencedRelation: "itens_cardapio"
             referencedColumns: ["id"]
           },
         ]
@@ -236,27 +321,6 @@ export type Database = {
           },
         ]
       }
-      itens_cardapio: {
-        Row: {
-          custo_unitario: number
-          id: string
-          nome: string
-          tipo: Database["public"]["Enums"]["item_tipo"]
-        }
-        Insert: {
-          custo_unitario: number
-          id?: string
-          nome: string
-          tipo: Database["public"]["Enums"]["item_tipo"]
-        }
-        Update: {
-          custo_unitario?: number
-          id?: string
-          nome?: string
-          tipo?: Database["public"]["Enums"]["item_tipo"]
-        }
-        Relationships: []
-      }
       leads: {
         Row: {
           created_at: string
@@ -353,13 +417,13 @@ export type Database = {
         | "aluguel"
         | "outros"
       evento_status: "planejado" | "confirmado" | "realizado" | "cancelado"
-      item_tipo: "comida" | "bebida" | "sobremesa"
       lead_status:
         | "novo"
         | "contato_realizado"
         | "proposta_enviada"
         | "fechado"
         | "perdido"
+      movimentacao_tipo: "entrada" | "saida"
       pagamento_status: "pendente" | "parcial" | "pago"
     }
     CompositeTypes: {
@@ -497,7 +561,6 @@ export const Constants = {
         "outros",
       ],
       evento_status: ["planejado", "confirmado", "realizado", "cancelado"],
-      item_tipo: ["comida", "bebida", "sobremesa"],
       lead_status: [
         "novo",
         "contato_realizado",
@@ -505,6 +568,7 @@ export const Constants = {
         "fechado",
         "perdido",
       ],
+      movimentacao_tipo: ["entrada", "saida"],
       pagamento_status: ["pendente", "parcial", "pago"],
     },
   },
