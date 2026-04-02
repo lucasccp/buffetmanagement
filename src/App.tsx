@@ -10,6 +10,7 @@ import Eventos from "./pages/Eventos";
 import EventoDetail from "./pages/EventoDetail";
 import Equipe from "./pages/Equipe";
 import Cardapio from "./pages/Cardapio";
+import Caixa from "./pages/Caixa";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/eventos/:id" element={<EventoDetail />} />
           <Route path="/equipe" element={<Equipe />} />
           <Route path="/cardapio" element={<Cardapio />} />
+          <Route path="/caixa" element={<Caixa />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
