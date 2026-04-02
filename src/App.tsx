@@ -10,6 +10,7 @@ import Eventos from "./pages/Eventos";
 import EventoDetail from "./pages/EventoDetail";
 import Equipe from "./pages/Equipe";
 import Cardapio from "./pages/Cardapio";
+import Caixa from "./pages/Caixa";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
