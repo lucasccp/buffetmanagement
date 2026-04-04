@@ -44,38 +44,51 @@ export default function Equipe() {
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold font-heading">Equipe</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-2" />Novo Membro</Button></DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Novo Membro</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(form as TablesInsert<"equipe">); }} className="space-y-4">
-              <div><Label>Nome *</Label><Input value={form.nome ?? ""} onChange={(e) => setForm({ ...form, nome: e.target.value })} required /></div>
-              <div><Label>Função</Label><Input value={form.funcao ?? ""} onChange={(e) => setForm({ ...form, funcao: e.target.value })} /></div>
-              <div><Label>Telefone</Label><Input value={form.telefone ?? ""} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
-              <div><Label>Custo por Evento</Label><Input type="number" step="0.01" value={form.custo_por_evento ?? ""} onChange={(e) => setForm({ ...form, custo_por_evento: parseFloat(e.target.value) || undefined })} /></div>
-              <Button type="submit" className="w-full">Cadastrar</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="bg-card rounded-lg border shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Função</TableHead><TableHead>Telefone</TableHead><TableHead>Custo/Evento</TableHead><TableHead></TableHead></TableRow></TableHeader>
-          <TableBody>
-            {equipe.map((e) => (
-              <TableRow key={e.id}>
-                <TableCell className="font-medium">{e.nome}</TableCell>
-                <TableCell>{e.funcao ?? "—"}</TableCell>
-                <TableCell>{e.telefone ?? "—"}</TableCell>
-                <TableCell>{formatCurrency(e.custo_por_evento)}</TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => deleteMut.mutate(e.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
-              </TableRow>
-            ))}
-            {equipe.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Nenhum membro cadastrado</TableCell></TableRow>}
-          </TableBody>
-        </Table>
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold tracking-tight">Equipe</h1>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Membro</Button></DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Novo Membro</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(form as TablesInsert<"equipe">); }} className="space-y-3">
+                <div><Label className="text-xs">Nome *</Label><Input value={form.nome ?? ""} onChange={(e) => setForm({ ...form, nome: e.target.value })} required className="mt-1" /></div>
+                <div><Label className="text-xs">Função</Label><Input value={form.funcao ?? ""} onChange={(e) => setForm({ ...form, funcao: e.target.value })} className="mt-1" /></div>
+                <div><Label className="text-xs">Telefone</Label><Input value={form.telefone ?? ""} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="mt-1" /></div>
+                <div><Label className="text-xs">Custo por Evento</Label><Input type="number" step="0.01" value={form.custo_por_evento ?? ""} onChange={(e) => setForm({ ...form, custo_por_evento: parseFloat(e.target.value) || undefined })} className="mt-1" /></div>
+                <Button type="submit" className="w-full" size="sm">Cadastrar</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs">Nome</TableHead>
+                  <TableHead className="text-xs">Função</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Telefone</TableHead>
+                  <TableHead className="text-xs">Custo/Evento</TableHead>
+                  <TableHead className="text-xs w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {equipe.map((e) => (
+                  <TableRow key={e.id}>
+                    <TableCell className="font-medium text-sm">{e.nome}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{e.funcao ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{e.telefone ?? "—"}</TableCell>
+                    <TableCell className="text-sm font-medium">{formatCurrency(e.custo_por_evento)}</TableCell>
+                    <TableCell><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMut.mutate(e.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
+                  </TableRow>
+                ))}
+                {equipe.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-12 text-sm">Nenhum membro cadastrado</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
     </AppLayout>
   );
