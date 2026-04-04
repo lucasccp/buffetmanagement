@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels } from "@/lib/formatters";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Pencil } from "lucide-react";
 
 export default function EventoDetail() {
   const { id } = useParams<{ id: string }>();
@@ -61,46 +61,48 @@ export default function EventoDetail() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["evento", id] }); toast.success("Evento atualizado!"); },
   });
 
-  if (!evento) return <AppLayout><div className="text-muted-foreground">Carregando...</div></AppLayout>;
+  if (!evento) return <AppLayout><div className="text-muted-foreground p-8">Carregando...</div></AppLayout>;
 
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold font-heading">{evento.nome_evento}</h1>
-          <p className="text-muted-foreground">{formatDate(evento.data_evento)} · {evento.local ?? "Sem local"}</p>
+      <div className="space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight">{evento.nome_evento}</h1>
+            <p className="text-sm text-muted-foreground">{formatDate(evento.data_evento)} · {evento.local ?? "Sem local"}</p>
+          </div>
+          <div className="flex gap-3">
+            <Card className="border shadow-none px-3 py-2">
+              <div className="text-[10px] text-muted-foreground font-medium">Custos</div>
+              <div className="text-base font-semibold text-destructive">{formatCurrency(custoTotal)}</div>
+            </Card>
+            <Card className="border shadow-none px-3 py-2">
+              <div className="text-[10px] text-muted-foreground font-medium">Recebido</div>
+              <div className="text-base font-semibold text-success">{formatCurrency(pagamentoTotal)}</div>
+            </Card>
+            <Card className="border shadow-none px-3 py-2">
+              <div className="text-[10px] text-muted-foreground font-medium">Lucro</div>
+              <div className={`text-base font-semibold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{formatCurrency(lucro)}</div>
+            </Card>
+          </div>
         </div>
-        <div className="flex gap-4">
-          <Card className="px-4 py-2">
-            <div className="text-xs text-muted-foreground">Custos</div>
-            <div className="text-lg font-bold text-destructive">{formatCurrency(custoTotal)}</div>
-          </Card>
-          <Card className="px-4 py-2">
-            <div className="text-xs text-muted-foreground">Recebido</div>
-            <div className="text-lg font-bold text-success">{formatCurrency(pagamentoTotal)}</div>
-          </Card>
-          <Card className="px-4 py-2">
-            <div className="text-xs text-muted-foreground">Lucro</div>
-            <div className={`text-lg font-bold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{formatCurrency(lucro)}</div>
-          </Card>
-        </div>
+
+        <Tabs defaultValue="geral">
+          <TabsList>
+            <TabsTrigger value="geral">Geral</TabsTrigger>
+            <TabsTrigger value="equipe">Equipe</TabsTrigger>
+            <TabsTrigger value="custos">Custos</TabsTrigger>
+            <TabsTrigger value="cardapio">Cardápio</TabsTrigger>
+            <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="geral"><GeralTab evento={evento} onUpdate={(v) => updateEvento.mutate(v)} /></TabsContent>
+          <TabsContent value="equipe"><EquipeTab eventoId={id!} /></TabsContent>
+          <TabsContent value="custos"><CustosTab eventoId={id!} /></TabsContent>
+          <TabsContent value="cardapio"><CardapioTab eventoId={id!} /></TabsContent>
+          <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} /></TabsContent>
+        </Tabs>
       </div>
-
-      <Tabs defaultValue="geral">
-        <TabsList>
-          <TabsTrigger value="geral">Geral</TabsTrigger>
-          <TabsTrigger value="equipe">Equipe</TabsTrigger>
-          <TabsTrigger value="custos">Custos</TabsTrigger>
-          <TabsTrigger value="cardapio">Cardápio</TabsTrigger>
-          <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="geral"><GeralTab evento={evento} onUpdate={(v) => updateEvento.mutate(v)} /></TabsContent>
-        <TabsContent value="equipe"><EquipeTab eventoId={id!} /></TabsContent>
-        <TabsContent value="custos"><CustosTab eventoId={id!} /></TabsContent>
-        <TabsContent value="cardapio"><CardapioTab eventoId={id!} /></TabsContent>
-        <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} /></TabsContent>
-      </Tabs>
     </AppLayout>
   );
 }
@@ -109,59 +111,51 @@ function GeralTab({ evento, onUpdate }: { evento: any; onUpdate: (v: any) => voi
   const [form, setForm] = useState(evento);
   const handleSave = () => {
     onUpdate({
-      nome_evento: form.nome_evento,
-      tipo_evento: form.tipo_evento,
-      data_evento: form.data_evento,
-      horario_inicio: form.horario_inicio,
-      horario_fim: form.horario_fim,
-      numero_convidados: form.numero_convidados,
-      local: form.local,
-      valor_total: form.valor_total,
-      status: form.status,
-      observacoes: form.observacoes,
+      nome_evento: form.nome_evento, tipo_evento: form.tipo_evento, data_evento: form.data_evento,
+      horario_inicio: form.horario_inicio, horario_fim: form.horario_fim, numero_convidados: form.numero_convidados,
+      local: form.local, valor_total: form.valor_total, status: form.status, observacoes: form.observacoes,
     });
   };
 
   return (
-    <Card className="mt-4">
-      <CardContent className="pt-6 space-y-4">
-        <div><Label>Nome do Evento</Label><Input value={form.nome_evento} onChange={(e) => setForm({ ...form, nome_evento: e.target.value })} /></div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><Label>Tipo</Label><Input value={form.tipo_evento ?? ""} onChange={(e) => setForm({ ...form, tipo_evento: e.target.value })} /></div>
-          <div><Label>Data</Label><Input type="date" value={form.data_evento ?? ""} onChange={(e) => setForm({ ...form, data_evento: e.target.value })} /></div>
+    <Card className="mt-4 border shadow-none">
+      <CardContent className="pt-6 space-y-3">
+        <div><Label className="text-xs">Nome do Evento</Label><Input value={form.nome_evento} onChange={(e) => setForm({ ...form, nome_evento: e.target.value })} className="mt-1" /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label className="text-xs">Tipo</Label><Input value={form.tipo_evento ?? ""} onChange={(e) => setForm({ ...form, tipo_evento: e.target.value })} className="mt-1" /></div>
+          <div><Label className="text-xs">Data</Label><Input type="date" value={form.data_evento ?? ""} onChange={(e) => setForm({ ...form, data_evento: e.target.value })} className="mt-1" /></div>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div><Label>Horário Início</Label><Input type="time" value={form.horario_inicio ?? ""} onChange={(e) => setForm({ ...form, horario_inicio: e.target.value })} /></div>
-          <div><Label>Horário Fim</Label><Input type="time" value={form.horario_fim ?? ""} onChange={(e) => setForm({ ...form, horario_fim: e.target.value })} /></div>
+        <div className="grid grid-cols-2 gap-3">
+          <div><Label className="text-xs">Horário Início</Label><Input type="time" value={form.horario_inicio ?? ""} onChange={(e) => setForm({ ...form, horario_inicio: e.target.value })} className="mt-1" /></div>
+          <div><Label className="text-xs">Horário Fim</Label><Input type="time" value={form.horario_fim ?? ""} onChange={(e) => setForm({ ...form, horario_fim: e.target.value })} className="mt-1" /></div>
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div><Label>Convidados</Label><Input type="number" value={form.numero_convidados ?? ""} onChange={(e) => setForm({ ...form, numero_convidados: parseInt(e.target.value) || null })} /></div>
-          <div><Label>Valor Total</Label><Input type="number" step="0.01" value={form.valor_total ?? ""} onChange={(e) => setForm({ ...form, valor_total: parseFloat(e.target.value) || null })} /></div>
+        <div className="grid grid-cols-3 gap-3">
+          <div><Label className="text-xs">Convidados</Label><Input type="number" value={form.numero_convidados ?? ""} onChange={(e) => setForm({ ...form, numero_convidados: parseInt(e.target.value) || null })} className="mt-1" /></div>
+          <div><Label className="text-xs">Valor Total</Label><Input type="number" step="0.01" value={form.valor_total ?? ""} onChange={(e) => setForm({ ...form, valor_total: parseFloat(e.target.value) || null })} className="mt-1" /></div>
           <div>
-            <Label>Status</Label>
+            <Label className="text-xs">Status</Label>
             <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {Constants.public.Enums.evento_status.map((s) => (
-                  <SelectItem key={s} value={s}>{eventoStatusLabels[s]}</SelectItem>
-                ))}
-              </SelectContent>
+              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+              <SelectContent>{Constants.public.Enums.evento_status.map((s) => <SelectItem key={s} value={s}>{eventoStatusLabels[s]}</SelectItem>)}</SelectContent>
             </Select>
           </div>
         </div>
-        <div><Label>Local</Label><Input value={form.local ?? ""} onChange={(e) => setForm({ ...form, local: e.target.value })} /></div>
-        <div><Label>Observações</Label><Textarea value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></div>
-        <Button onClick={handleSave}>Salvar Alterações</Button>
+        <div><Label className="text-xs">Local</Label><Input value={form.local ?? ""} onChange={(e) => setForm({ ...form, local: e.target.value })} className="mt-1" /></div>
+        <div><Label className="text-xs">Observações</Label><Textarea value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="mt-1" /></div>
+        <Button onClick={handleSave} size="sm">Salvar Alterações</Button>
       </CardContent>
     </Card>
   );
 }
 
+// ─── EQUIPE TAB ────────────────────────────────────────────
 function EquipeTab({ eventoId }: { eventoId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [equipeId, setEquipeId] = useState("");
   const [valorPago, setValorPago] = useState("");
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editValor, setEditValor] = useState("");
 
   const { data: eventoEquipe = [] } = useQuery({
     queryKey: ["evento_equipe", eventoId],
@@ -183,11 +177,7 @@ function EquipeTab({ eventoId }: { eventoId: string }) {
 
   const addMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("evento_equipe").insert({
-        evento_id: eventoId,
-        equipe_id: equipeId,
-        valor_pago: parseFloat(valorPago) || 0,
-      });
+      const { error } = await supabase.from("evento_equipe").insert({ evento_id: eventoId, equipe_id: equipeId, valor_pago: parseFloat(valorPago) || 0 });
       if (error) throw error;
     },
     onSuccess: () => {
@@ -195,6 +185,19 @@ function EquipeTab({ eventoId }: { eventoId: string }) {
       qc.invalidateQueries({ queryKey: ["custo_total", eventoId] });
       setEquipeId(""); setValorPago(""); setOpen(false);
       toast.success("Membro adicionado!");
+    },
+  });
+
+  const editMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("evento_equipe").update({ valor_pago: parseFloat(editValor) || 0 }).eq("id", editItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["evento_equipe", eventoId] });
+      qc.invalidateQueries({ queryKey: ["custo_total", eventoId] });
+      setEditItem(null);
+      toast.success("Membro atualizado!");
     },
   });
 
@@ -209,29 +212,30 @@ function EquipeTab({ eventoId }: { eventoId: string }) {
     },
   });
 
+  const openEdit = (ee: any) => {
+    setEditItem(ee);
+    setEditValor(String(ee.valor_pago ?? 0));
+  };
+
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card className="mt-4 border shadow-none">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between text-sm font-medium">
           Equipe do Evento
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-2" />Adicionar Membro</Button>
-            </DialogTrigger>
+            <DialogTrigger asChild><Button size="sm" className="text-xs"><Plus className="h-3.5 w-3.5 mr-1.5" />Adicionar</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Adicionar Membro à Equipe</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-3">
                 <div>
-                  <Label>Membro *</Label>
+                  <Label className="text-xs">Membro *</Label>
                   <Select value={equipeId} onValueChange={setEquipeId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione um membro" /></SelectTrigger>
-                    <SelectContent>
-                      {equipeList.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome} - {e.funcao}</SelectItem>)}
-                    </SelectContent>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione um membro" /></SelectTrigger>
+                    <SelectContent>{equipeList.map((e) => <SelectItem key={e.id} value={e.id}>{e.nome} - {e.funcao}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Valor Pago</Label><Input placeholder="Valor pago" type="number" step="0.01" value={valorPago} onChange={(e) => setValorPago(e.target.value)} /></div>
-                <Button type="submit" className="w-full" disabled={!equipeId}>Adicionar</Button>
+                <div><Label className="text-xs">Valor Pago</Label><Input type="number" step="0.01" value={valorPago} onChange={(e) => setValorPago(e.target.value)} className="mt-1" /></div>
+                <Button type="submit" className="w-full" size="sm" disabled={!equipeId}>Adicionar</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -239,30 +243,50 @@ function EquipeTab({ eventoId }: { eventoId: string }) {
       </CardHeader>
       <CardContent>
         <Table>
-          <TableHeader><TableRow><TableHead>Nome</TableHead><TableHead>Função</TableHead><TableHead>Valor Pago</TableHead><TableHead></TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="text-xs">Nome</TableHead><TableHead className="text-xs">Função</TableHead><TableHead className="text-xs">Valor Pago</TableHead><TableHead className="text-xs w-[80px]"></TableHead></TableRow></TableHeader>
           <TableBody>
             {eventoEquipe.map((ee: any) => (
               <TableRow key={ee.id}>
-                <TableCell>{ee.equipe?.nome}</TableCell>
-                <TableCell>{ee.equipe?.funcao}</TableCell>
-                <TableCell>{formatCurrency(ee.valor_pago)}</TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => removeMut.mutate(ee.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                <TableCell className="text-sm">{ee.equipe?.nome}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{ee.equipe?.funcao}</TableCell>
+                <TableCell className="text-sm font-medium">{formatCurrency(ee.valor_pago)}</TableCell>
+                <TableCell>
+                  <div className="flex gap-0.5">
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(ee)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(ee.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
-            {eventoEquipe.length === 0 && (
-              <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4">Nenhum membro na equipe</TableCell></TableRow>
-            )}
+            {eventoEquipe.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8 text-sm">Nenhum membro na equipe</TableCell></TableRow>}
           </TableBody>
         </Table>
       </CardContent>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editItem} onOpenChange={(v) => !v && setEditItem(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Membro</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={(e) => { e.preventDefault(); editMut.mutate(); }} className="space-y-3">
+              <div><Label className="text-xs">Membro</Label><Input value={editItem.equipe?.nome ?? ""} disabled className="mt-1" /></div>
+              <div><Label className="text-xs">Valor Pago</Label><Input type="number" step="0.01" value={editValor} onChange={(e) => setEditValor(e.target.value)} className="mt-1" /></div>
+              <Button type="submit" className="w-full" size="sm">Salvar</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
 
+// ─── CUSTOS TAB ────────────────────────────────────────────
 function CustosTab({ eventoId }: { eventoId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<TablesInsert<"custos_evento">>>({});
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>({});
 
   const { data: custos = [] } = useQuery({
     queryKey: ["custos_evento", eventoId],
@@ -276,11 +300,7 @@ function CustosTab({ eventoId }: { eventoId: string }) {
   const addMut = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("custos_evento").insert({
-        evento_id: eventoId,
-        descricao: form.descricao!,
-        categoria: form.categoria!,
-        valor: form.valor!,
-        data_custo: form.data_custo,
+        evento_id: eventoId, descricao: form.descricao!, categoria: form.categoria!, valor: form.valor!, data_custo: form.data_custo,
       });
       if (error) throw error;
     },
@@ -290,6 +310,21 @@ function CustosTab({ eventoId }: { eventoId: string }) {
       qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
       setForm({}); setOpen(false);
       toast.success("Custo adicionado!");
+    },
+  });
+
+  const editMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("custos_evento").update({
+        descricao: editForm.descricao, categoria: editForm.categoria, valor: editForm.valor, data_custo: editForm.data_custo,
+      }).eq("id", editItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["custos_evento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["custo_total", eventoId] });
+      setEditItem(null);
+      toast.success("Custo atualizado!");
     },
   });
 
@@ -304,31 +339,32 @@ function CustosTab({ eventoId }: { eventoId: string }) {
     },
   });
 
+  const openEdit = (c: any) => {
+    setEditItem(c);
+    setEditForm({ descricao: c.descricao, categoria: c.categoria, valor: c.valor, data_custo: c.data_custo ?? "" });
+  };
+
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card className="mt-4 border shadow-none">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between text-sm font-medium">
           Custos do Evento
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-2" />Novo Custo</Button>
-            </DialogTrigger>
+            <DialogTrigger asChild><Button size="sm" className="text-xs"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Custo</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Novo Custo</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-4">
-                <div><Label>Descrição *</Label><Input value={form.descricao ?? ""} onChange={(e) => setForm({ ...form, descricao: e.target.value })} required /></div>
+              <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-3">
+                <div><Label className="text-xs">Descrição *</Label><Input value={form.descricao ?? ""} onChange={(e) => setForm({ ...form, descricao: e.target.value })} required className="mt-1" /></div>
                 <div>
-                  <Label>Categoria *</Label>
+                  <Label className="text-xs">Categoria *</Label>
                   <Select value={form.categoria ?? ""} onValueChange={(v) => setForm({ ...form, categoria: v as any })}>
-                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                    <SelectContent>
-                      {Constants.public.Enums.custo_categoria.map((c) => <SelectItem key={c} value={c}>{custoCategLabels[c]}</SelectItem>)}
-                    </SelectContent>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>{Constants.public.Enums.custo_categoria.map((c) => <SelectItem key={c} value={c}>{custoCategLabels[c]}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <div><Label>Valor *</Label><Input type="number" step="0.01" value={form.valor ?? ""} onChange={(e) => setForm({ ...form, valor: parseFloat(e.target.value) })} required /></div>
-                <div><Label>Data</Label><Input type="date" value={form.data_custo ?? ""} onChange={(e) => setForm({ ...form, data_custo: e.target.value })} /></div>
-                <Button type="submit" className="w-full" disabled={!form.descricao || !form.categoria || !form.valor}>Adicionar Custo</Button>
+                <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={form.valor ?? ""} onChange={(e) => setForm({ ...form, valor: parseFloat(e.target.value) })} required className="mt-1" /></div>
+                <div><Label className="text-xs">Data</Label><Input type="date" value={form.data_custo ?? ""} onChange={(e) => setForm({ ...form, data_custo: e.target.value })} className="mt-1" /></div>
+                <Button type="submit" className="w-full" size="sm" disabled={!form.descricao || !form.categoria || !form.valor}>Adicionar</Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -336,27 +372,53 @@ function CustosTab({ eventoId }: { eventoId: string }) {
       </CardHeader>
       <CardContent>
         <Table>
-          <TableHeader><TableRow><TableHead>Descrição</TableHead><TableHead>Categoria</TableHead><TableHead>Valor</TableHead><TableHead>Data</TableHead><TableHead></TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow className="hover:bg-transparent"><TableHead className="text-xs">Descrição</TableHead><TableHead className="text-xs">Categoria</TableHead><TableHead className="text-xs">Valor</TableHead><TableHead className="text-xs hidden md:table-cell">Data</TableHead><TableHead className="text-xs w-[80px]"></TableHead></TableRow></TableHeader>
           <TableBody>
             {custos.map((c) => (
               <TableRow key={c.id}>
-                <TableCell>{c.descricao}</TableCell>
-                <TableCell><Badge variant="outline">{custoCategLabels[c.categoria]}</Badge></TableCell>
-                <TableCell>{formatCurrency(c.valor)}</TableCell>
-                <TableCell>{formatDate(c.data_custo)}</TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => removeMut.mutate(c.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+                <TableCell className="text-sm">{c.descricao}</TableCell>
+                <TableCell><Badge variant="outline" className="text-xs font-normal">{custoCategLabels[c.categoria]}</Badge></TableCell>
+                <TableCell className="text-sm font-medium">{formatCurrency(c.valor)}</TableCell>
+                <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(c.data_custo)}</TableCell>
+                <TableCell>
+                  <div className="flex gap-0.5">
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
+                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(c.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
-            {custos.length === 0 && (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4">Nenhum custo registrado</TableCell></TableRow>
-            )}
+            {custos.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8 text-sm">Nenhum custo registrado</TableCell></TableRow>}
           </TableBody>
         </Table>
       </CardContent>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editItem} onOpenChange={(v) => !v && setEditItem(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Custo</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={(e) => { e.preventDefault(); editMut.mutate(); }} className="space-y-3">
+              <div><Label className="text-xs">Descrição *</Label><Input value={editForm.descricao} onChange={(e) => setEditForm({ ...editForm, descricao: e.target.value })} required className="mt-1" /></div>
+              <div>
+                <Label className="text-xs">Categoria *</Label>
+                <Select value={editForm.categoria} onValueChange={(v) => setEditForm({ ...editForm, categoria: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>{Constants.public.Enums.custo_categoria.map((c) => <SelectItem key={c} value={c}>{custoCategLabels[c]}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: parseFloat(e.target.value) })} required className="mt-1" /></div>
+              <div><Label className="text-xs">Data</Label><Input type="date" value={editForm.data_custo} onChange={(e) => setEditForm({ ...editForm, data_custo: e.target.value })} className="mt-1" /></div>
+              <Button type="submit" className="w-full" size="sm">Salvar</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
 
+// ─── CARDÁPIO TAB ────────────────────────────────────────────
 function CardapioTab({ eventoId }: { eventoId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -382,17 +444,10 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
 
   const addMut = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("evento_cardapio").insert({
-        evento_id: eventoId,
-        cardapio_id: cardapioId,
-      });
+      const { error } = await supabase.from("evento_cardapio").insert({ evento_id: eventoId, cardapio_id: cardapioId });
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["evento_cardapio", eventoId] });
-      setCardapioId(""); setOpen(false);
-      toast.success("Cardápio vinculado!");
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["evento_cardapio", eventoId] }); setCardapioId(""); setOpen(false); toast.success("Cardápio vinculado!"); },
   });
 
   const removeMut = useMutation({
@@ -400,69 +455,56 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
       const { error } = await supabase.from("evento_cardapio").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["evento_cardapio", eventoId] });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["evento_cardapio", eventoId] }); },
   });
 
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
+    <Card className="mt-4 border shadow-none">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center justify-between text-sm font-medium">
           Cardápio do Evento
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm"><Plus className="h-4 w-4 mr-2" />Vincular Cardápio</Button>
-            </DialogTrigger>
+            <DialogTrigger asChild><Button size="sm" className="text-xs"><Plus className="h-3.5 w-3.5 mr-1.5" />Vincular</Button></DialogTrigger>
             <DialogContent>
               <DialogHeader><DialogTitle>Vincular Cardápio</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-4">
+              <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-3">
                 <div>
-                  <Label>Cardápio *</Label>
+                  <Label className="text-xs">Cardápio *</Label>
                   <Select value={cardapioId} onValueChange={setCardapioId}>
-                    <SelectTrigger><SelectValue placeholder="Selecione um cardápio" /></SelectTrigger>
-                    <SelectContent>
-                      {cardapiosList.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>{c.nome} - {formatCurrency(c.valor_sugerido_pp)}/pessoa</SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Selecione um cardápio" /></SelectTrigger>
+                    <SelectContent>{cardapiosList.map((c) => <SelectItem key={c.id} value={c.id}>{c.nome} - {formatCurrency(c.valor_sugerido_pp)}/pessoa</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full" disabled={!cardapioId}>Vincular</Button>
+                <Button type="submit" className="w-full" size="sm" disabled={!cardapioId}>Vincular</Button>
               </form>
             </DialogContent>
           </Dialog>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {eventoCardapios.map((ec: any) => (
             <div key={ec.id} className="border rounded-lg p-4">
               <div className="flex items-center justify-between mb-2">
                 <div>
-                  <h4 className="font-medium">{ec.cardapios?.nome}</h4>
-                  <p className="text-sm text-muted-foreground">{formatCurrency(ec.cardapios?.valor_sugerido_pp)}/pessoa</p>
+                  <h4 className="text-sm font-medium">{ec.cardapios?.nome}</h4>
+                  <p className="text-xs text-muted-foreground">{formatCurrency(ec.cardapios?.valor_sugerido_pp)}/pessoa</p>
                 </div>
-                <Button size="icon" variant="ghost" onClick={() => removeMut.mutate(ec.id)}>
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(ec.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
               </div>
               <div className="flex flex-wrap gap-1">
-                {ec.cardapios?.cardapio_itens?.map((i: any) => (
-                  <Badge key={i.id} variant="outline">{i.nome}</Badge>
-                ))}
+                {ec.cardapios?.cardapio_itens?.map((i: any) => <Badge key={i.id} variant="outline" className="text-xs font-normal">{i.nome}</Badge>)}
               </div>
             </div>
           ))}
-          {eventoCardapios.length === 0 && (
-            <p className="text-center text-muted-foreground py-4">Nenhum cardápio vinculado</p>
-          )}
+          {eventoCardapios.length === 0 && <p className="text-center text-muted-foreground py-8 text-sm">Nenhum cardápio vinculado</p>}
         </div>
       </CardContent>
     </Card>
   );
 }
 
+// ─── PAGAMENTOS TAB ────────────────────────────────────────────
 function PagamentosTab({ eventoId }: { eventoId: string }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
@@ -471,6 +513,9 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
   const [dataPagamento, setDataPagamento] = useState("");
   const [metodo, setMetodo] = useState("pix");
   const [status, setStatus] = useState<"planejado" | "pago">("planejado");
+
+  const [editItem, setEditItem] = useState<any>(null);
+  const [editForm, setEditForm] = useState<any>({});
 
   const { data: pagamentos = [] } = useQuery({
     queryKey: ["pagamentos_evento", eventoId],
@@ -487,12 +532,8 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
   const addMut = useMutation({
     mutationFn: async () => {
       const { error } = await supabase.from("pagamentos_evento").insert({
-        evento_id: eventoId,
-        valor: parseFloat(valor),
-        data_planejada: dataPlanejada,
-        data_pagamento: dataPagamento || null,
-        metodo_pagamento: metodo as any,
-        status: status,
+        evento_id: eventoId, valor: parseFloat(valor), data_planejada: dataPlanejada,
+        data_pagamento: dataPagamento || null, metodo_pagamento: metodo as any, status,
       });
       if (error) throw error;
     },
@@ -501,6 +542,22 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
       qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
       setValor(""); setDataPlanejada(""); setDataPagamento(""); setMetodo("pix"); setStatus("planejado"); setOpen(false);
       toast.success("Pagamento registrado!");
+    },
+  });
+
+  const editMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("pagamentos_evento").update({
+        valor: editForm.valor, data_planejada: editForm.data_planejada,
+        data_pagamento: editForm.data_pagamento || null, metodo_pagamento: editForm.metodo_pagamento, status: editForm.status,
+      }).eq("id", editItem.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
+      setEditItem(null);
+      toast.success("Pagamento atualizado!");
     },
   });
 
@@ -525,52 +582,50 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
       const { error } = await supabase.from("pagamentos_evento").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] });
-    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] }); },
   });
 
+  const openEdit = (p: any) => {
+    setEditItem(p);
+    setEditForm({
+      valor: p.valor, data_planejada: p.data_planejada, data_pagamento: p.data_pagamento ?? "",
+      metodo_pagamento: p.metodo_pagamento, status: p.status,
+    });
+  };
+
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <span>Pagamentos do Evento</span>
-          <div className="flex items-center gap-4">
-            <div className="flex gap-4 text-sm font-normal">
-              <span className="text-muted-foreground">Total: {formatCurrency(totalPlanejado)}</span>
-              <span className="text-success">Recebido: {formatCurrency(totalPago)}</span>
-            </div>
+    <Card className="mt-4 border shadow-none">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
+          <span>Pagamentos</span>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground font-normal">Total: {formatCurrency(totalPlanejado)}</span>
+            <span className="text-xs text-success font-normal">Recebido: {formatCurrency(totalPago)}</span>
             <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm"><Plus className="h-4 w-4 mr-2" />Novo Pagamento</Button>
-              </DialogTrigger>
+              <DialogTrigger asChild><Button size="sm" className="text-xs"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo</Button></DialogTrigger>
               <DialogContent>
                 <DialogHeader><DialogTitle>Novo Pagamento</DialogTitle></DialogHeader>
-                <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-4">
-                  <div><Label>Valor *</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} required /></div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div><Label>Data Planejada *</Label><Input type="date" value={dataPlanejada} onChange={(e) => setDataPlanejada(e.target.value)} required /></div>
-                    <div><Label>Data Pagamento</Label><Input type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} /></div>
+                <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-3">
+                  <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} required className="mt-1" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label className="text-xs">Data Planejada *</Label><Input type="date" value={dataPlanejada} onChange={(e) => setDataPlanejada(e.target.value)} required className="mt-1" /></div>
+                    <div><Label className="text-xs">Data Pagamento</Label><Input type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} className="mt-1" /></div>
                   </div>
                   <div>
-                    <Label>Método de Pagamento</Label>
+                    <Label className="text-xs">Método</Label>
                     <Select value={metodo} onValueChange={setMetodo}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                      </SelectContent>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>{Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label>Status</Label>
+                    <Label className="text-xs">Status</Label>
                     <Select value={status} onValueChange={(v) => setStatus(v as "planejado" | "pago")}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                      </SelectContent>
+                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
-                  <Button type="submit" className="w-full" disabled={!valor || !dataPlanejada}>Registrar Pagamento</Button>
+                  <Button type="submit" className="w-full" size="sm" disabled={!valor || !dataPlanejada}>Registrar</Button>
                 </form>
               </DialogContent>
             </Dialog>
@@ -578,41 +633,79 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Valor</TableHead>
-              <TableHead>Data Planejada</TableHead>
-              <TableHead>Data Pagamento</TableHead>
-              <TableHead>Método</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pagamentos.map((p) => (
-              <TableRow key={p.id}>
-                <TableCell className="font-medium">{formatCurrency(p.valor)}</TableCell>
-                <TableCell>{formatDate(p.data_planejada)}</TableCell>
-                <TableCell>{formatDate(p.data_pagamento)}</TableCell>
-                <TableCell>{metodoPagamentoLabels[p.metodo_pagamento] ?? p.metodo_pagamento}</TableCell>
-                <TableCell>
-                  <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, newStatus: v as "planejado" | "pago" })}>
-                    <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell><Button size="icon" variant="ghost" onClick={() => removeMut.mutate(p.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button></TableCell>
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead className="text-xs">Valor</TableHead>
+                <TableHead className="text-xs">Planejada</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Pagamento</TableHead>
+                <TableHead className="text-xs hidden md:table-cell">Método</TableHead>
+                <TableHead className="text-xs">Status</TableHead>
+                <TableHead className="text-xs w-[80px]"></TableHead>
               </TableRow>
-            ))}
-            {pagamentos.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4">Nenhum pagamento registrado</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {pagamentos.map((p) => (
+                <TableRow key={p.id}>
+                  <TableCell className="text-sm font-medium">{formatCurrency(p.valor)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDate(p.data_planejada)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(p.data_pagamento)}</TableCell>
+                  <TableCell className="text-sm hidden md:table-cell">{metodoPagamentoLabels[p.metodo_pagamento] ?? p.metodo_pagamento}</TableCell>
+                  <TableCell>
+                    <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, newStatus: v as "planejado" | "pago" })}>
+                      <SelectTrigger className="w-[100px] h-7 text-xs border-0 p-0">
+                        <Badge variant="outline" className={p.status === "pago" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
+                          {pagamentoEventoStatusLabels[p.status]}
+                        </Badge>
+                      </SelectTrigger>
+                      <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-0.5">
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(p.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+              {pagamentos.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-sm">Nenhum pagamento registrado</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </div>
       </CardContent>
+
+      {/* Edit Modal */}
+      <Dialog open={!!editItem} onOpenChange={(v) => !v && setEditItem(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Pagamento</DialogTitle></DialogHeader>
+          {editItem && (
+            <form onSubmit={(e) => { e.preventDefault(); editMut.mutate(); }} className="space-y-3">
+              <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: parseFloat(e.target.value) })} required className="mt-1" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Data Planejada *</Label><Input type="date" value={editForm.data_planejada} onChange={(e) => setEditForm({ ...editForm, data_planejada: e.target.value })} required className="mt-1" /></div>
+                <div><Label className="text-xs">Data Pagamento</Label><Input type="date" value={editForm.data_pagamento} onChange={(e) => setEditForm({ ...editForm, data_pagamento: e.target.value })} className="mt-1" /></div>
+              </div>
+              <div>
+                <Label className="text-xs">Método</Label>
+                <Select value={editForm.metodo_pagamento} onValueChange={(v) => setEditForm({ ...editForm, metodo_pagamento: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-xs">Status</Label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full" size="sm">Salvar</Button>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
