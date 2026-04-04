@@ -18,11 +18,11 @@ import { formatDate, leadStatusLabels } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
 
 const statusColors: Record<string, string> = {
-  novo: "bg-info text-info-foreground",
-  contato_realizado: "bg-warning text-warning-foreground",
-  proposta_enviada: "bg-primary text-primary-foreground",
-  fechado: "bg-success text-success-foreground",
-  perdido: "bg-destructive text-destructive-foreground",
+  novo: "bg-info/10 text-info border-info/20",
+  contato_realizado: "bg-warning/10 text-warning border-warning/20",
+  proposta_enviada: "bg-primary/10 text-primary border-primary/20",
+  fechado: "bg-success/10 text-success border-success/20",
+  perdido: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
 export default function Leads() {
@@ -77,89 +77,84 @@ export default function Leads() {
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!form.nome) return;
-    createMut.mutate(form as TablesInsert<"leads">);
-  };
-
   return (
     <AppLayout>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold font-heading">Leads</h1>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button><Plus className="h-4 w-4 mr-2" />Novo Lead</Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Novo Lead</DialogTitle></DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div><Label>Nome *</Label><Input value={form.nome ?? ""} onChange={(e) => setForm({ ...form, nome: e.target.value })} required /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Telefone</Label><Input value={form.telefone ?? ""} onChange={(e) => setForm({ ...form, telefone: e.target.value })} /></div>
-                <div><Label>Email</Label><Input value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label>Tipo de Evento</Label><Input value={form.tipo_evento ?? ""} onChange={(e) => setForm({ ...form, tipo_evento: e.target.value })} /></div>
-                <div><Label>Data Prevista</Label><Input type="date" value={form.data_prevista ?? ""} onChange={(e) => setForm({ ...form, data_prevista: e.target.value })} /></div>
-              </div>
-              <div><Label>Nº Convidados</Label><Input type="number" value={form.numero_convidados ?? ""} onChange={(e) => setForm({ ...form, numero_convidados: parseInt(e.target.value) || undefined })} /></div>
-              <div><Label>Observações</Label><Textarea value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} /></div>
-              <Button type="submit" className="w-full">Criar Lead</Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+      <div className="space-y-5">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-semibold tracking-tight">Leads</h1>
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Lead</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle>Novo Lead</DialogTitle></DialogHeader>
+              <form onSubmit={(e) => { e.preventDefault(); if (form.nome) createMut.mutate(form as TablesInsert<"leads">); }} className="space-y-3">
+                <div><Label className="text-xs">Nome *</Label><Input value={form.nome ?? ""} onChange={(e) => setForm({ ...form, nome: e.target.value })} required className="mt-1" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Telefone</Label><Input value={form.telefone ?? ""} onChange={(e) => setForm({ ...form, telefone: e.target.value })} className="mt-1" /></div>
+                  <div><Label className="text-xs">Email</Label><Input value={form.email ?? ""} onChange={(e) => setForm({ ...form, email: e.target.value })} className="mt-1" /></div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Tipo de Evento</Label><Input value={form.tipo_evento ?? ""} onChange={(e) => setForm({ ...form, tipo_evento: e.target.value })} className="mt-1" /></div>
+                  <div><Label className="text-xs">Data Prevista</Label><Input type="date" value={form.data_prevista ?? ""} onChange={(e) => setForm({ ...form, data_prevista: e.target.value })} className="mt-1" /></div>
+                </div>
+                <div><Label className="text-xs">Nº Convidados</Label><Input type="number" value={form.numero_convidados ?? ""} onChange={(e) => setForm({ ...form, numero_convidados: parseInt(e.target.value) || undefined })} className="mt-1" /></div>
+                <div><Label className="text-xs">Observações</Label><Textarea value={form.observacoes ?? ""} onChange={(e) => setForm({ ...form, observacoes: e.target.value })} className="mt-1" /></div>
+                <Button type="submit" className="w-full" size="sm">Criar Lead</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        <div className="rounded-lg border bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs">Nome</TableHead>
+                  <TableHead className="text-xs">Telefone</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Tipo Evento</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Data Prevista</TableHead>
+                  <TableHead className="text-xs hidden lg:table-cell">Convidados</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="text-xs w-[80px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {leads.map((lead) => (
+                  <TableRow key={lead.id}>
+                    <TableCell className="font-medium text-sm">{lead.nome}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{lead.telefone ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{lead.tipo_evento ?? "—"}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(lead.data_prevista)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">{lead.numero_convidados ?? "—"}</TableCell>
+                    <TableCell>
+                      <Select value={lead.status} onValueChange={(v) => updateStatus.mutate({ id: lead.id, status: v as Enums<"lead_status"> })}>
+                        <SelectTrigger className="w-[140px] h-7 text-xs border-0 p-0">
+                          <Badge variant="outline" className={statusColors[lead.status]}>{leadStatusLabels[lead.status]}</Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Constants.public.Enums.lead_status.map((s) => (
+                            <SelectItem key={s} value={s}>{leadStatusLabels[s]}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {leads.length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-12 text-sm">Nenhum lead encontrado</TableCell></TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
       </div>
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Nome</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Tipo Evento</TableHead>
-              <TableHead>Data Prevista</TableHead>
-              <TableHead>Convidados</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {leads.map((lead) => (
-              <TableRow key={lead.id}>
-                <TableCell className="font-medium">{lead.nome}</TableCell>
-                <TableCell>{lead.telefone ?? "—"}</TableCell>
-                <TableCell>{lead.tipo_evento ?? "—"}</TableCell>
-                <TableCell>{formatDate(lead.data_prevista)}</TableCell>
-                <TableCell>{lead.numero_convidados ?? "—"}</TableCell>
-                <TableCell>
-                  <Select value={lead.status} onValueChange={(v) => updateStatus.mutate({ id: lead.id, status: v as Enums<"lead_status"> })}>
-                    <SelectTrigger className="w-[160px]">
-                      <Badge className={statusColors[lead.status]}>{leadStatusLabels[lead.status]}</Badge>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {Constants.public.Enums.lead_status.map((s) => (
-                        <SelectItem key={s} value={s}>{leadStatusLabels[s]}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell>
-                  <Button size="sm" variant="outline" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
-                    <ArrowRight className="h-4 w-4 mr-1" />Converter
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-            {leads.length === 0 && (
-              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum lead encontrado</TableCell></TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </Card>
     </AppLayout>
   );
-}
-
-function Card({ children }: { children: React.ReactNode }) {
-  return <div className="bg-card rounded-lg border shadow-sm overflow-hidden">{children}</div>;
 }
