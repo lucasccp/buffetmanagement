@@ -666,7 +666,7 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
                   <TableCell>
                     <div className="flex gap-0.5">
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(p.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />
                     </div>
                   </TableCell>
                 </TableRow>

@@ -192,9 +192,7 @@ export default function Caixa() {
                     </TableCell>
                     <TableCell>
                       {!m.automatica && (
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMut.mutate(m.id)}>
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
+                        <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(m.id)} title="Excluir movimentação" description="Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita." />
                       )}
                     </TableCell>
                   </TableRow>
