@@ -13,6 +13,7 @@ const baseNavItems = [
   { to: "/equipe", label: "Equipe", icon: UsersRound },
   { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed },
   { to: "/caixa", label: "Caixa", icon: Wallet },
+  { to: "/financeiro", label: "Financeiro", icon: CreditCard },
   { to: "/calendario", label: "Calendário", icon: Calendar },
 ];
 
