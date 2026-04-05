@@ -654,6 +654,7 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["parcelas_pagamento", eventoId] });
       qc.invalidateQueries({ queryKey: ["parcelas_resumo", eventoId] });
+      qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] });
       qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
       toast.success("Parcela marcada como paga!");
     },
