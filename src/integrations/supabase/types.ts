@@ -515,6 +515,48 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_caixa_fluxo_mensal: {
+        Args: { p_data_fim?: string; p_data_inicio?: string }
+        Returns: {
+          entradas: number
+          mes: string
+          saidas: number
+          saldo: number
+        }[]
+      }
+      get_caixa_metrics: {
+        Args: { p_data_fim?: string; p_data_inicio?: string }
+        Returns: {
+          entradas_previstas: number
+          entradas_realizadas: number
+          saidas: number
+          saldo_atual: number
+          saldo_futuro: number
+        }[]
+      }
+      get_caixa_saldo_acumulado: {
+        Args: { p_data_fim?: string; p_data_inicio?: string }
+        Returns: {
+          mes: string
+          saldo_acumulado: number
+        }[]
+      }
+      get_dashboard_executivo: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_evento_id?: string
+          p_tipo_evento?: string
+        }
+        Returns: {
+          custo_total: number
+          faturamento_total: number
+          lucro_total: number
+          margem_media: number
+          ticket_medio: number
+          total_eventos: number
+        }[]
+      }
       get_dashboard_filtrado: {
         Args: {
           p_data_fim?: string
@@ -528,6 +570,31 @@ export type Database = {
           total_eventos: number
         }[]
       }
+      get_eventos_ranking: {
+        Args: { p_data_fim?: string; p_data_inicio?: string; p_limit?: number }
+        Returns: {
+          custo: number
+          data_evento: string
+          evento_id: string
+          faturamento: number
+          lucro: number
+          nome_evento: string
+        }[]
+      }
+      get_executivo_mensal: {
+        Args: {
+          p_data_fim?: string
+          p_data_inicio?: string
+          p_evento_id?: string
+          p_tipo_evento?: string
+        }
+        Returns: {
+          custo_mes: number
+          faturamento_mes: number
+          lucro_mes: number
+          mes: string
+        }[]
+      }
       get_financeiro_mensal: {
         Args: {
           p_data_fim?: string
@@ -539,6 +606,17 @@ export type Database = {
           faturamento_mes: number
           lucro_mes: number
           mes: string
+        }[]
+      }
+      get_financeiro_metrics: {
+        Args: { p_data_fim?: string; p_data_inicio?: string }
+        Returns: {
+          eventos_com_pendencia: number
+          faturamento_total: number
+          taxa_inadimplencia: number
+          total_a_receber: number
+          total_atrasado: number
+          total_recebido: number
         }[]
       }
       get_financeiro_parcelas: {
@@ -560,6 +638,14 @@ export type Database = {
           entradas_previstas: number
           entradas_realizadas: number
           periodo: string
+        }[]
+      }
+      get_parcelas_distribuicao: {
+        Args: { p_data_fim?: string; p_data_inicio?: string }
+        Returns: {
+          status: string
+          total: number
+          valor: number
         }[]
       }
       get_parcelas_resumo: {
