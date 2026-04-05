@@ -164,6 +164,28 @@ export default function Cardapio() {
             )}
           </DialogContent>
         </Dialog>
+
+        <Dialog open={!!pdfCardapioId} onOpenChange={() => setPdfCardapioId(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Gerar PDF de Cotação</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Nome da Empresa</Label><Input value={empresaNome} onChange={(e) => setEmpresaNome(e.target.value)} className="mt-1" /></div>
+              <div><Label className="text-xs">Telefone</Label><Input value={empresaTelefone} onChange={(e) => setEmpresaTelefone(e.target.value)} className="mt-1" /></div>
+              <div><Label className="text-xs">Instagram</Label><Input value={empresaInstagram} onChange={(e) => setEmpresaInstagram(e.target.value)} className="mt-1" /></div>
+              <div><Label className="text-xs">Slogan</Label><Input value={empresaSlogan} onChange={(e) => setEmpresaSlogan(e.target.value)} className="mt-1" /></div>
+              <Button className="w-full" size="sm" onClick={() => {
+                const cardapio = cardapios.find((c) => c.id === pdfCardapioId);
+                if (cardapio) {
+                  generateCardapioPdf([cardapio], { nome: empresaNome, telefone: empresaTelefone, instagram: empresaInstagram, slogan: empresaSlogan });
+                  setPdfCardapioId(null);
+                  toast.success("PDF gerado com sucesso!");
+                }
+              }}>
+                <FileText className="h-3.5 w-3.5 mr-1.5" />Gerar PDF
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
