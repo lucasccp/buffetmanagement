@@ -68,39 +68,42 @@ export default function Cardapio() {
   return (
     <AppLayout>
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">Cardápios</h1>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Cardápio</Button></DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
-            <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }} className="space-y-3">
-                <div><Label className="text-xs">Nome *</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" /></div>
-                <div><Label className="text-xs">Valor Sugerido por Pessoa</Label><Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" /></div>
-                <div>
-                  <Label className="text-xs">Itens do Cardápio</Label>
-                  <div className="space-y-2 mt-1.5">
-                    {itensNomes.map((item, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input placeholder={`Item ${idx + 1}`} value={item} onChange={(e) => updateItemField(idx, e.target.value)} />
-                        {itensNomes.length > 1 && (
-                          <Button type="button" size="sm" variant="ghost" className="h-9 w-9 p-0 shrink-0" onClick={() => removeItemField(idx)}>
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={addItemField} className="text-xs">
-                      <Plus className="h-3 w-3 mr-1" />Adicionar Item
-                    </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" />Importar PDF
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Cardápio</Button></DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }} className="space-y-3">
+                  <div><Label className="text-xs">Nome *</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" /></div>
+                  <div><Label className="text-xs">Valor Sugerido por Pessoa</Label><Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" /></div>
+                  <div>
+                    <Label className="text-xs">Itens do Cardápio</Label>
+                    <div className="space-y-2 mt-1.5">
+                      {itensNomes.map((item, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <Input placeholder={`Item ${idx + 1}`} value={item} onChange={(e) => updateItemField(idx, e.target.value)} />
+                          {itensNomes.length > 1 && (
+                            <Button type="button" size="sm" variant="ghost" className="h-9 w-9 p-0 shrink-0" onClick={() => removeItemField(idx)}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button type="button" variant="outline" size="sm" onClick={addItemField} className="text-xs">
+                        <Plus className="h-3 w-3 mr-1" />Adicionar Item
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <Button type="submit" className="w-full" size="sm" disabled={createMut.isPending}>Cadastrar</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <Button type="submit" className="w-full" size="sm" disabled={createMut.isPending}>Cadastrar</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="rounded-lg border bg-card overflow-hidden">
