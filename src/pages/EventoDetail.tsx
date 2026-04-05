@@ -19,6 +19,7 @@ import { useState } from "react";
 import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels } from "@/lib/formatters";
 import { Plus, Pencil } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
+import ParcelasTab from "@/components/ParcelasTab";
 
 export default function EventoDetail() {
   const { id } = useParams<{ id: string }>();
@@ -89,12 +90,13 @@ export default function EventoDetail() {
         </div>
 
         <Tabs defaultValue="geral">
-          <TabsList>
+          <TabsList className="flex-wrap">
             <TabsTrigger value="geral">Geral</TabsTrigger>
             <TabsTrigger value="equipe">Equipe</TabsTrigger>
             <TabsTrigger value="custos">Custos</TabsTrigger>
             <TabsTrigger value="cardapio">Cardápio</TabsTrigger>
             <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
+            <TabsTrigger value="parcelas">Parcelas</TabsTrigger>
           </TabsList>
 
           <TabsContent value="geral"><GeralTab evento={evento} onUpdate={(v) => updateEvento.mutate(v)} /></TabsContent>
@@ -102,6 +104,7 @@ export default function EventoDetail() {
           <TabsContent value="custos"><CustosTab eventoId={id!} /></TabsContent>
           <TabsContent value="cardapio"><CardapioTab eventoId={id!} /></TabsContent>
           <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} /></TabsContent>
+          <TabsContent value="parcelas"><ParcelasTab eventoId={id!} /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>

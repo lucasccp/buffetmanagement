@@ -401,6 +401,47 @@ export type Database = {
           },
         ]
       }
+      parcelas_pagamento: {
+        Row: {
+          created_at: string
+          data_pagamento: string | null
+          data_vencimento: string
+          evento_id: string
+          id: string
+          numero_parcela: number
+          status: Database["public"]["Enums"]["parcela_status"]
+          valor: number
+        }
+        Insert: {
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento: string
+          evento_id: string
+          id?: string
+          numero_parcela: number
+          status?: Database["public"]["Enums"]["parcela_status"]
+          valor: number
+        }
+        Update: {
+          created_at?: string
+          data_pagamento?: string | null
+          data_vencimento?: string
+          evento_id?: string
+          id?: string
+          numero_parcela?: number
+          status?: Database["public"]["Enums"]["parcela_status"]
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcelas_pagamento_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string | null
@@ -460,7 +501,17 @@ export type Database = {
       }
     }
     Functions: {
+      atualizar_parcelas_atrasadas: { Args: never; Returns: number }
       calcular_custos_evento: { Args: { p_evento_id: string }; Returns: number }
+      gerar_parcelas: {
+        Args: {
+          p_data_inicial: string
+          p_evento_id: string
+          p_num_parcelas: number
+          p_valor_total: number
+        }
+        Returns: undefined
+      }
       get_dashboard_filtrado: {
         Args: {
           p_data_fim?: string
@@ -485,6 +536,40 @@ export type Database = {
           faturamento_mes: number
           lucro_mes: number
           mes: string
+        }[]
+      }
+      get_financeiro_parcelas: {
+        Args: { p_data_fim?: string; p_data_inicio?: string }
+        Returns: {
+          eventos_com_pendencia: number
+          total_a_receber: number
+          total_atrasado: number
+          total_recebido: number
+        }[]
+      }
+      get_fluxo_caixa_parcelas: {
+        Args: {
+          p_agrupamento?: string
+          p_data_fim?: string
+          p_data_inicio?: string
+        }
+        Returns: {
+          entradas_previstas: number
+          entradas_realizadas: number
+          periodo: string
+        }[]
+      }
+      get_parcelas_resumo: {
+        Args: { p_evento_id: string }
+        Returns: {
+          qtd_atrasadas: number
+          qtd_pagas: number
+          qtd_pendentes: number
+          total_atrasado: number
+          total_pago: number
+          total_parcelas: number
+          total_pendente: number
+          total_valor: number
         }[]
       }
       has_role: {
@@ -522,6 +607,7 @@ export type Database = {
       movimentacao_tipo: "entrada" | "saida"
       pagamento_evento_status: "planejado" | "pago"
       pagamento_status: "pendente" | "parcial" | "pago"
+      parcela_status: "pendente" | "pago" | "atrasado"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -678,6 +764,7 @@ export const Constants = {
       movimentacao_tipo: ["entrada", "saida"],
       pagamento_evento_status: ["planejado", "pago"],
       pagamento_status: ["pendente", "parcial", "pago"],
+      parcela_status: ["pendente", "pago", "atrasado"],
     },
   },
 } as const

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Calendar, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun, LogOut, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Calendar, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun, LogOut, ShieldCheck, CreditCard } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
@@ -13,6 +13,7 @@ const baseNavItems = [
   { to: "/equipe", label: "Equipe", icon: UsersRound },
   { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed },
   { to: "/caixa", label: "Caixa", icon: Wallet },
+  { to: "/financeiro", label: "Financeiro", icon: CreditCard },
   { to: "/calendario", label: "Calendário", icon: Calendar },
 ];
 

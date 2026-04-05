@@ -13,6 +13,7 @@ import Equipe from "./pages/Equipe";
 import Cardapio from "./pages/Cardapio";
 import Caixa from "./pages/Caixa";
 import Calendario from "./pages/Calendario";
+import Financeiro from "./pages/Financeiro";
 import Usuarios from "./pages/Usuarios";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -37,6 +38,7 @@ const App = () => (
           <Route path="/cardapio" element={<ProtectedRoute><Cardapio /></ProtectedRoute>} />
           <Route path="/caixa" element={<ProtectedRoute><Caixa /></ProtectedRoute>} />
           <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
+          <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
           <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
