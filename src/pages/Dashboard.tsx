@@ -13,6 +13,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import AppLayout from "@/components/AppLayout";
+import InsightsPanel from "@/components/InsightsPanel";
 
 const COLORS = {
   faturamento: "hsl(152, 56%, 46%)",
