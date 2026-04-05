@@ -12,6 +12,7 @@ import EventoDetail from "./pages/EventoDetail";
 import Equipe from "./pages/Equipe";
 import Cardapio from "./pages/Cardapio";
 import Caixa from "./pages/Caixa";
+import Calendario from "./pages/Calendario";
 import Usuarios from "./pages/Usuarios";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
