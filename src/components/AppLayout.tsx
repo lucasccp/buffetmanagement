@@ -1,7 +1,8 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/use-theme";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -14,6 +15,7 @@ const navItems = [
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="flex min-h-screen">
@@ -65,6 +67,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5 text-muted-foreground" />
           </button>
           <div className="lg:hidden text-sm font-semibold text-foreground">BuffetPro</div>
+          <div className="ml-auto">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Alternar tema"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4 text-muted-foreground" /> : <Moon className="h-4 w-4 text-muted-foreground" />}
+            </button>
+          </div>
         </header>
         <main className="flex-1 p-4 lg:p-6 overflow-auto animate-fade-in">
           {children}
