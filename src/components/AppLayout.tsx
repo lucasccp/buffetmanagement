@@ -1,8 +1,9 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun, LogOut } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -16,6 +17,13 @@ const navItems = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -55,8 +63,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="px-5 py-4 border-t border-sidebar-border">
+        <div className="px-5 py-4 border-t border-sidebar-border flex items-center justify-between">
           <p className="text-[11px] text-sidebar-foreground/50">© 2026 BuffetPro</p>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-md hover:bg-sidebar-accent/60 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </aside>
 
