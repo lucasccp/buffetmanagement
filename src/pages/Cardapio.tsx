@@ -74,6 +74,8 @@ export default function Cardapio() {
             <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Cardápio</Button></DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
+            <DialogContent className="max-w-lg">
+              <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }} className="space-y-3">
                 <div><Label className="text-xs">Nome *</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" /></div>
                 <div><Label className="text-xs">Valor Sugerido por Pessoa</Label><Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" /></div>
