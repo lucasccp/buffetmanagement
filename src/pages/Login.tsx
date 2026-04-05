@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +18,14 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
+
+  // Redirect if already logged in
+  const { user, loading: authLoading } = useAuth();
+  React.useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
