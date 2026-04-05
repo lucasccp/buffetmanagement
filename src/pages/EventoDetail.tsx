@@ -75,18 +75,18 @@ export default function EventoDetail() {
             <h1 className="text-xl font-semibold tracking-tight">{evento.nome_evento}</h1>
             <p className="text-sm text-muted-foreground">{formatDate(evento.data_evento)} · {evento.local ?? "Sem local"}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
             <Card className="border shadow-none px-3 py-2">
               <div className="text-[10px] text-muted-foreground font-medium">Custos</div>
-              <div className="text-base font-semibold text-destructive">{formatCurrency(custoTotal)}</div>
+              <div className="text-sm sm:text-base font-semibold text-destructive">{formatCurrency(custoTotal)}</div>
             </Card>
             <Card className="border shadow-none px-3 py-2">
               <div className="text-[10px] text-muted-foreground font-medium">Recebido</div>
-              <div className="text-base font-semibold text-success">{formatCurrency(pagamentoTotal)}</div>
+              <div className="text-sm sm:text-base font-semibold text-success">{formatCurrency(pagamentoTotal)}</div>
             </Card>
             <Card className="border shadow-none px-3 py-2">
               <div className="text-[10px] text-muted-foreground font-medium">Lucro</div>
-              <div className={`text-base font-semibold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{formatCurrency(lucro)}</div>
+              <div className={`text-sm sm:text-base font-semibold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{formatCurrency(lucro)}</div>
             </Card>
           </div>
         </div>
