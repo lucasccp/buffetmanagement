@@ -193,9 +193,8 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
               <span>{parsed.categorias.length} categoria(s) • {totalItems} item(ns) detectado(s)</span>
             </div>
 
-            <div className="max-h-[55vh] sm:max-h-[380px] overflow-hidden flex-1 min-h-0">
-              <ScrollArea className="h-full" type="always">
-                <div className="space-y-3 pr-3">
+            <div className="max-h-[55vh] sm:max-h-[380px] overflow-y-auto overflow-x-auto flex-1 min-h-0 border rounded-md p-2">
+                <div className="space-y-3">
                   {parsed.categorias.map((cat, ci) => (
                     <div key={ci}>
                       <div className="flex items-center gap-2 mb-1.5">
@@ -247,8 +246,6 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
                     </div>
                   ))}
                 </div>
-                <ScrollBar orientation="horizontal" />
-              </ScrollArea>
             </div>
 
             <div className="flex gap-2 justify-center pt-2">
