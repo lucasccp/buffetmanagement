@@ -126,6 +126,7 @@ export default function Cardapio() {
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setViewId(c.id)}><Eye className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPdfCardapioId(c.id)} title="Gerar PDF"><FileText className="h-3.5 w-3.5" /></Button>
                         <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(c.id)} title="Excluir cardápio" description={`Tem certeza que deseja excluir "${c.nome}"? Esta ação não pode ser desfeita.`} />
                       </div>
                     </TableCell>
