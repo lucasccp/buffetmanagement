@@ -25,6 +25,7 @@ import { useRole } from "@/hooks/use-role";
 export default function EventoDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const { isAdmin } = useRole();
 
   const { data: evento } = useQuery({
     queryKey: ["evento", id],
