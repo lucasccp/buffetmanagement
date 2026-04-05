@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Eye } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatDate, formatCurrency, eventoStatusLabels } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
 
