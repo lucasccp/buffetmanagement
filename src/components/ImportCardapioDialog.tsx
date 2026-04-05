@@ -252,10 +252,10 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
             </div>
 
             <div className="flex gap-2 justify-center pt-2">
-              <Button variant="outline" size="sm" className="flex-1 max-w-[200px]" onClick={reset}>
+              <Button variant="outline" size="sm" className="min-w-[140px]" onClick={reset}>
                 <X className="h-3.5 w-3.5 mr-1" />Cancelar
               </Button>
-              <Button size="sm" className="flex-1 max-w-[200px]" onClick={() => importMut.mutate()} disabled={importMut.isPending || totalItems === 0}>
+              <Button size="sm" className="min-w-[180px]" onClick={() => importMut.mutate()} disabled={importMut.isPending || totalItems === 0}>
                 <Check className="h-3.5 w-3.5 mr-1" />Confirmar Importação
               </Button>
             </div>
