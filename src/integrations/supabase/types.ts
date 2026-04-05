@@ -515,6 +515,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_ai_financial_snapshot: { Args: never; Returns: Json }
       get_caixa_fluxo_mensal: {
         Args: { p_data_fim?: string; p_data_inicio?: string }
         Returns: {
