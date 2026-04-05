@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, ExternalLink, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Plus, ExternalLink, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 
 export default function Caixa() {
