@@ -63,8 +63,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </NavLink>
           ))}
         </nav>
-        <div className="px-5 py-4 border-t border-sidebar-border">
+        <div className="px-5 py-4 border-t border-sidebar-border flex items-center justify-between">
           <p className="text-[11px] text-sidebar-foreground/50">© 2026 BuffetPro</p>
+          <button
+            onClick={handleLogout}
+            className="p-1.5 rounded-md hover:bg-sidebar-accent/60 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
+            title="Sair"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
         </div>
       </aside>
 
