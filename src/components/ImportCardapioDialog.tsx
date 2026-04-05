@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Upload, FileText, Check, X, Loader2, Sparkles, Pencil, Trash2 } from "lucide-react";
 import { parsePdfCardapio, type ParsedCardapio, type ParsedItem } from "@/lib/parsePdfCardapio";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface Props {
   open: boolean;
