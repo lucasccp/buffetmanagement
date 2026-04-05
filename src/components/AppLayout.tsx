@@ -52,7 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <nav className="flex-1 px-3 space-y-0.5 mt-2">
+        <nav className="flex-1 px-3 space-y-0.5 mt-2 overflow-y-auto">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
