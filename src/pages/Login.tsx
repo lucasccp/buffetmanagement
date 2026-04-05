@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { Mail, Lock, Eye, EyeClosed, ArrowRight, Sun, Moon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
 
