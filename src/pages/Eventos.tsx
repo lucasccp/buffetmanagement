@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, Eye } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatDate, formatCurrency, eventoStatusLabels } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
 
@@ -45,6 +46,14 @@ export default function Eventos() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["eventos"] }); setOpen(false); setForm({}); toast.success("Evento criado!"); },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("eventos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["eventos"] }); toast.success("Evento removido!"); },
   });
 
   return (
@@ -114,7 +123,12 @@ export default function Eventos() {
                     <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{ev.local ?? "—"}</TableCell>
                     <TableCell className="text-sm font-medium">{formatCurrency(ev.valor_total)}</TableCell>
                     <TableCell><Badge variant="outline" className={statusColors[ev.status]}>{eventoStatusLabels[ev.status]}</Badge></TableCell>
-                    <TableCell><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); navigate(`/eventos/${ev.id}`); }}><Eye className="h-3.5 w-3.5" /></Button></TableCell>
+                    <TableCell>
+                      <div className="flex gap-0.5">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={(e) => { e.stopPropagation(); navigate(`/eventos/${ev.id}`); }}><Eye className="h-3.5 w-3.5" /></Button>
+                        <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(ev.id)} title="Excluir evento" description={`Tem certeza que deseja excluir "${ev.nome_evento}"? Todos os custos, pagamentos e equipe vinculados serão removidos.`} />
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
                 {eventos.length === 0 && (

@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Plus, ArrowRight } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatDate, leadStatusLabels } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
 
@@ -46,6 +47,14 @@ export default function Leads() {
       if (error) throw error;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); setOpen(false); setForm({}); toast.success("Lead criado!"); },
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("leads").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast.success("Lead removido!"); },
   });
 
   const updateStatus = useMutation({
@@ -141,9 +150,12 @@ export default function Leads() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex gap-0.5">
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                        <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(lead.id)} title="Excluir lead" description={`Tem certeza que deseja excluir "${lead.nome}"? Esta ação não pode ser desfeita.`} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
