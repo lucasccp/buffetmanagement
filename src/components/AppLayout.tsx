@@ -67,6 +67,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5 text-muted-foreground" />
           </button>
           <div className="lg:hidden text-sm font-semibold text-foreground">BuffetPro</div>
+          <div className="ml-auto">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-muted transition-colors"
+              aria-label="Alternar tema"
+            >
+              {theme === "dark" ? <Sun className="h-4 w-4 text-muted-foreground" /> : <Moon className="h-4 w-4 text-muted-foreground" />}
+            </button>
+          </div>
         </header>
         <main className="flex-1 p-4 lg:p-6 overflow-auto animate-fade-in">
           {children}
