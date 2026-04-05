@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Mail, Lock, Eye, EyeClosed, ArrowRight } from "lucide-react";
+import { Mail, Lock, Eye, EyeClosed, ArrowRight, Sun, Moon } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTheme } from "@/hooks/use-theme";
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
@@ -13,6 +14,7 @@ export default function Login() {
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
+  const { theme, toggleTheme } = useTheme();
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -50,8 +52,15 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center overflow-hidden relative"
-      style={{ background: "linear-gradient(135deg, #0f0a1a 0%, #1a1035 30%, #12081f 60%, #0a0612 100%)" }}>
+    <div className="min-h-screen flex items-center justify-center overflow-hidden relative bg-background">
+
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        className="absolute top-4 right-4 z-20 p-2 rounded-lg bg-card/60 backdrop-blur border border-border text-muted-foreground hover:text-foreground transition-colors"
+      >
+        {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+      </button>
 
       {/* Background effects */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -84,52 +93,50 @@ export default function Login() {
         >
           {/* Card glow border */}
           <div className="absolute -inset-[1px] rounded-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-            {/* Traveling light beams */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/10 to-transparent" />
             <motion.div
               animate={{ x: ["-100%", "200%"] }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 2 }}
-              className="absolute top-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              className="absolute top-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
             />
             <motion.div
               animate={{ y: ["-100%", "200%"] }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 3, delay: 1 }}
-              className="absolute top-0 right-0 w-[1px] h-1/3 bg-gradient-to-b from-transparent via-white/30 to-transparent"
+              className="absolute top-0 right-0 w-[1px] h-1/3 bg-gradient-to-b from-transparent via-foreground/20 to-transparent"
             />
             <motion.div
               animate={{ x: ["200%", "-100%"] }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 2, delay: 2 }}
-              className="absolute bottom-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent"
+              className="absolute bottom-0 left-0 w-1/3 h-[1px] bg-gradient-to-r from-transparent via-foreground/20 to-transparent"
             />
             <motion.div
               animate={{ y: ["200%", "-100%"] }}
               transition={{ duration: 4, repeat: Infinity, ease: "linear", repeatDelay: 3, delay: 3 }}
-              className="absolute top-0 left-0 w-[1px] h-1/3 bg-gradient-to-b from-transparent via-white/30 to-transparent"
+              className="absolute top-0 left-0 w-[1px] h-1/3 bg-gradient-to-b from-transparent via-foreground/20 to-transparent"
             />
           </div>
 
           {/* Glass card */}
-          <div className="relative rounded-2xl p-8 backdrop-blur-xl border border-white/[0.08]"
-            style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%)" }}>
+          <div className="relative rounded-2xl p-8 backdrop-blur-xl border border-border bg-card/80">
 
             {/* Logo and header */}
             <div className="text-center mb-8">
               <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4 overflow-hidden"
                 style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))" }}>
-                <span className="text-2xl font-bold text-white">B</span>
-                <div className="absolute inset-0 bg-gradient-to-b from-white/20 to-transparent" />
+                <span className="text-2xl font-bold text-primary-foreground">B</span>
+                <div className="absolute inset-0 bg-gradient-to-b from-foreground/10 to-transparent" />
               </div>
-              <h1 className="text-2xl font-bold text-white mb-1">Bem-vindo de volta</h1>
-              <p className="text-sm text-white/40">Entre para acessar o BuffetPro</p>
+              <h1 className="text-2xl font-bold text-foreground mb-1">Bem-vindo de volta</h1>
+              <p className="text-sm text-muted-foreground">Entre para acessar o BuffetPro</p>
             </div>
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50 uppercase tracking-wider">E-mail</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">E-mail</label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type="email"
                     placeholder="seu@email.com"
@@ -138,19 +145,19 @@ export default function Login() {
                     onFocus={() => setFocusedInput("email")}
                     onBlur={() => setFocusedInput(null)}
                     required
-                    className="w-full bg-white/5 border border-transparent focus:border-white/20 text-white placeholder:text-white/30 h-10 rounded-lg pl-10 pr-3 text-sm outline-none transition-all duration-300 focus:bg-white/10"
+                    className="w-full bg-input border border-transparent focus:border-ring text-foreground placeholder:text-muted-foreground h-10 rounded-lg pl-10 pr-3 text-sm outline-none transition-all duration-300 focus:bg-input/80"
                   />
                   {focusedInput === "email" && (
-                    <motion.div layoutId="input-glow" className="absolute -inset-[1px] rounded-lg border border-white/20 pointer-events-none" />
+                    <motion.div layoutId="input-glow" className="absolute -inset-[1px] rounded-lg border border-ring/50 pointer-events-none" />
                   )}
                 </div>
               </div>
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-white/50 uppercase tracking-wider">Senha</label>
+                <label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Senha</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <input
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
@@ -159,13 +166,13 @@ export default function Login() {
                     onFocus={() => setFocusedInput("password")}
                     onBlur={() => setFocusedInput(null)}
                     required
-                    className="w-full bg-white/5 border border-transparent focus:border-white/20 text-white placeholder:text-white/30 h-10 rounded-lg pl-10 pr-10 text-sm outline-none transition-all duration-300 focus:bg-white/10"
+                    className="w-full bg-input border border-transparent focus:border-ring text-foreground placeholder:text-muted-foreground h-10 rounded-lg pl-10 pr-10 text-sm outline-none transition-all duration-300 focus:bg-input/80"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
                     {showPassword ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                   {focusedInput === "password" && (
-                    <motion.div layoutId="input-glow" className="absolute -inset-[1px] rounded-lg border border-white/20 pointer-events-none" />
+                    <motion.div layoutId="input-glow" className="absolute -inset-[1px] rounded-lg border border-ring/50 pointer-events-none" />
                   )}
                 </div>
               </div>
@@ -178,17 +185,17 @@ export default function Login() {
                       type="checkbox"
                       checked={rememberMe}
                       onChange={() => setRememberMe(!rememberMe)}
-                      className="appearance-none h-4 w-4 rounded border border-white/20 bg-white/5 checked:bg-white checked:border-white focus:outline-none transition-all duration-200"
+                      className="appearance-none h-4 w-4 rounded border border-border bg-input checked:bg-primary checked:border-primary focus:outline-none transition-all duration-200"
                     />
                     {rememberMe && (
-                      <svg className="absolute inset-0 w-4 h-4 text-black pointer-events-none" viewBox="0 0 16 16">
+                      <svg className="absolute inset-0 w-4 h-4 text-primary-foreground pointer-events-none" viewBox="0 0 16 16">
                         <path d="M4 8l3 3 5-5" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     )}
                   </div>
-                  <span className="text-xs text-white/40">Lembrar-me</span>
+                  <span className="text-xs text-muted-foreground">Lembrar-me</span>
                 </label>
-                <Link to="/login" className="text-xs text-white/40 hover:text-white/70 transition-colors">
+                <Link to="/login" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
                   Esqueceu a senha?
                 </Link>
               </div>
@@ -200,12 +207,12 @@ export default function Login() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="relative w-full h-11 rounded-xl text-white font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300 overflow-hidden"
+                  className="relative w-full h-11 rounded-xl text-primary-foreground font-medium text-sm flex items-center justify-center gap-2 transition-all duration-300 overflow-hidden"
                   style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent)))" }}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
                   {isLoading ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <div className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   ) : (
                     <>
                       Entrar
@@ -217,25 +224,25 @@ export default function Login() {
 
               {/* Divider */}
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-white/10" />
-                <span className="text-xs text-white/30">ou</span>
-                <div className="flex-1 h-px bg-white/10" />
+                <div className="flex-1 h-px bg-border" />
+                <span className="text-xs text-muted-foreground">ou</span>
+                <div className="flex-1 h-px bg-border" />
               </div>
 
               {/* Google button placeholder */}
               <button
                 type="button"
-                className="relative w-full h-11 rounded-xl bg-white/5 border border-white/10 text-white/70 font-medium text-sm flex items-center justify-center gap-3 hover:bg-white/10 transition-all duration-300"
+                className="relative w-full h-11 rounded-xl bg-secondary border border-border text-secondary-foreground font-medium text-sm flex items-center justify-center gap-3 hover:bg-secondary/80 transition-all duration-300"
               >
-                <span className="w-5 h-5 rounded-full bg-white/20 flex items-center justify-center text-xs font-bold">G</span>
+                <span className="w-5 h-5 rounded-full bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">G</span>
                 Entrar com Google
               </button>
             </form>
 
             {/* Sign up link */}
-            <p className="text-center text-sm text-white/30 mt-6">
+            <p className="text-center text-sm text-muted-foreground mt-6">
               Não tem uma conta?{" "}
-              <Link to="/register" className="text-white/70 hover:text-white transition-colors font-medium">
+              <Link to="/register" className="text-foreground hover:text-primary transition-colors font-medium">
                 Cadastre-se
               </Link>
             </p>
