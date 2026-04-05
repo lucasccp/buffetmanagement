@@ -65,7 +65,8 @@ export default function ParcelasTab({ eventoId }: { eventoId: string }) {
   // Generate installments
   const gerarMut = useMutation({
     mutationFn: async () => {
-      const vt = parseFloat(valorTotal);
+      const rawValor = valorTotal || String(evento?.valor_total ?? "");
+      const vt = parseFloat(rawValor);
       const np = parseInt(numParcelas);
       if (!vt || !np || !dataInicial) throw new Error("Preencha todos os campos");
 
