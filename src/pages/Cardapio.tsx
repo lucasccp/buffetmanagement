@@ -198,6 +198,7 @@ export default function Cardapio() {
         </Dialog>
 
         <ImportCardapioDialog open={importOpen} onOpenChange={setImportOpen} />
+        <EditCardapioDialog cardapio={cardapios.find((c) => c.id === editId) ?? null} open={!!editId} onOpenChange={() => setEditId(null)} />
       </div>
     </AppLayout>
   );
