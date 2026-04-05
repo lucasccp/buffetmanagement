@@ -94,7 +94,7 @@ export default function Login() {
           transition={{ type: "spring", stiffness: 100, damping: 30 }}
         >
           {/* Card glow border */}
-          <div className="absolute -inset-[1px] rounded-2xl overflow-hidden">
+          <div className="absolute -inset-[1px] rounded-2xl overflow-hidden pointer-events-none">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/10 to-transparent" />
             <motion.div
               animate={{ x: ["-100%", "200%"] }}
