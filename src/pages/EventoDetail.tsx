@@ -20,6 +20,7 @@ import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagam
 import { Plus, Pencil, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { parcelaStatusLabels } from "@/lib/formatters";
+import { useRole } from "@/hooks/use-role";
 
 export default function EventoDetail() {
   const { id } = useParams<{ id: string }>();
