@@ -181,7 +181,7 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
         )}
 
         {step === "preview" && parsed && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <div>
               <Label className="text-xs">Nome do Cardápio</Label>
               <Input value={cardapioName} onChange={(e) => setCardapioName(e.target.value)} className="mt-1" />
@@ -192,60 +192,62 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
               <span>{parsed.categorias.length} categoria(s) • {totalItems} item(ns) detectado(s)</span>
             </div>
 
-            <ScrollArea className="max-h-[320px]">
-              <div className="space-y-3 pr-3">
-                {parsed.categorias.map((cat, ci) => (
-                  <div key={ci}>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <Badge variant="secondary" className="text-xs">{cat.nome}</Badge>
-                      <span className="text-xs text-muted-foreground">{cat.itens.length} itens</span>
-                    </div>
-                    <div className="space-y-1 pl-2">
-                      {cat.itens.map((item, ii) => (
-                        <div key={ii} className="flex items-center gap-2 text-sm group">
-                          {editingItem?.catIdx === ci && editingItem?.itemIdx === ii ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <Input
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="h-7 text-sm"
-                                autoFocus
-                                onKeyDown={(e) => {
-                                  if (e.key === "Enter") saveEditItem();
-                                  if (e.key === "Escape") { setEditingItem(null); setEditValue(""); }
-                                }}
-                              />
-                              <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={saveEditItem}>
-                                <Check className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <>
-                              <Check className="h-3 w-3 text-primary shrink-0" />
-                              <span className="truncate flex-1">{item.nome}</span>
-                              <Badge variant="outline" className={`text-[10px] px-1.5 py-0 ${tipoBadgeColors[item.tipo] ?? ""}`}>
-                                {item.tipo}
-                              </Badge>
-                              <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  size="sm" variant="ghost" className="h-6 w-6 p-0"
-                                  onClick={() => { setEditingItem({ catIdx: ci, itemIdx: ii }); setEditValue(item.nome); }}
-                                >
-                                  <Pencil className="h-3 w-3" />
-                                </Button>
-                                <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => removeItem(ci, ii)}>
-                                  <Trash2 className="h-3 w-3" />
+            <div className="max-h-[50vh] sm:max-h-[320px] overflow-hidden flex-1 min-h-0">
+              <ScrollArea className="h-full">
+                <div className="space-y-3 pr-3">
+                  {parsed.categorias.map((cat, ci) => (
+                    <div key={ci}>
+                      <div className="flex items-center gap-2 mb-1.5">
+                        <Badge variant="secondary" className="text-xs">{cat.nome}</Badge>
+                        <span className="text-xs text-muted-foreground">{cat.itens.length} itens</span>
+                      </div>
+                      <div className="space-y-1 pl-2">
+                        {cat.itens.map((item, ii) => (
+                          <div key={ii} className="flex items-center gap-2 text-sm group min-w-0">
+                            {editingItem?.catIdx === ci && editingItem?.itemIdx === ii ? (
+                              <div className="flex items-center gap-1 flex-1 min-w-0">
+                                <Input
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  className="h-7 text-sm"
+                                  autoFocus
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter") saveEditItem();
+                                    if (e.key === "Escape") { setEditingItem(null); setEditValue(""); }
+                                  }}
+                                />
+                                <Button size="sm" variant="ghost" className="h-7 w-7 p-0 shrink-0" onClick={saveEditItem}>
+                                  <Check className="h-3 w-3" />
                                 </Button>
                               </div>
-                            </>
-                          )}
-                        </div>
-                      ))}
+                            ) : (
+                              <>
+                                <Check className="h-3 w-3 text-primary shrink-0" />
+                                <span className="truncate flex-1 min-w-0">{item.nome}</span>
+                                <Badge variant="outline" className={`text-[10px] px-1.5 py-0 shrink-0 ${tipoBadgeColors[item.tipo] ?? ""}`}>
+                                  {item.tipo}
+                                </Badge>
+                                <div className="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                                  <Button
+                                    size="sm" variant="ghost" className="h-6 w-6 p-0"
+                                    onClick={() => { setEditingItem({ catIdx: ci, itemIdx: ii }); setEditValue(item.nome); }}
+                                  >
+                                    <Pencil className="h-3 w-3" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => removeItem(ci, ii)}>
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
+                  ))}
+                </div>
+              </ScrollArea>
+            </div>
 
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="flex-1" onClick={reset}>
