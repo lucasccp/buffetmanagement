@@ -254,7 +254,7 @@ function EquipeTab({ eventoId }: { eventoId: string }) {
                 <TableCell>
                   <div className="flex gap-0.5">
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(ee)}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(ee.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    <DeleteConfirmDialog onConfirm={() => removeMut.mutate(ee.id)} title="Remover membro" description={`Remover "${ee.equipe?.nome}" do evento?`} />
                   </div>
                 </TableCell>
               </TableRow>
