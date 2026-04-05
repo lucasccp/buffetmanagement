@@ -17,9 +17,9 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels } from "@/lib/formatters";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import ParcelasTab from "@/components/ParcelasTab";
+import { parcelaStatusLabels } from "@/lib/formatters";
 
 export default function EventoDetail() {
   const { id } = useParams<{ id: string }>();
