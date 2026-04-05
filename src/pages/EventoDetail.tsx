@@ -753,7 +753,7 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />
+                        {isAdmin && <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />}
                       </div>
                     </TableCell>
                   </TableRow>
