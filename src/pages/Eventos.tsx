@@ -48,6 +48,14 @@ export default function Eventos() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["eventos"] }); setOpen(false); setForm({}); toast.success("Evento criado!"); },
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("eventos").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["eventos"] }); toast.success("Evento removido!"); },
+  });
+
   return (
     <AppLayout>
       <div className="space-y-5">
