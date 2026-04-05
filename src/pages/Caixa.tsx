@@ -57,8 +57,8 @@ export default function Caixa() {
         const path = `${Date.now()}.${ext}`;
         const { error: uploadErr } = await supabase.storage.from("notas-fiscais").upload(path, file);
         if (uploadErr) throw uploadErr;
-        const { data: urlData } = supabase.storage.from("notas-fiscais").getPublicUrl(path);
-        notaUrl = urlData.publicUrl;
+        const { data: signedData } = await supabase.storage.from("notas-fiscais").createSignedUrl(path, 3600);
+        notaUrl = signedData?.signedUrl || path;
         setUploading(false);
       }
       const { error } = await supabase.from("caixa_movimentacoes").insert({
