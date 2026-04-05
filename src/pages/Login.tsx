@@ -27,6 +27,15 @@ export default function Login() {
     }
   }, [user, authLoading, navigate]);
 
+  // Show minimal spinner while checking auth — avoid rendering heavy UI
+  if (authLoading || user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const rotateX = useTransform(() => {
