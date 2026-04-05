@@ -20,10 +20,12 @@ import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagam
 import { Plus, Pencil, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { parcelaStatusLabels } from "@/lib/formatters";
+import { useRole } from "@/hooks/use-role";
 
 export default function EventoDetail() {
   const { id } = useParams<{ id: string }>();
   const qc = useQueryClient();
+  const { isAdmin } = useRole();
 
   const { data: evento } = useQuery({
     queryKey: ["evento", id],
@@ -102,7 +104,7 @@ export default function EventoDetail() {
           <TabsContent value="equipe"><EquipeTab eventoId={id!} /></TabsContent>
           <TabsContent value="custos"><CustosTab eventoId={id!} /></TabsContent>
           <TabsContent value="cardapio"><CardapioTab eventoId={id!} /></TabsContent>
-          <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} evento={evento} /></TabsContent>
+          <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} evento={evento} isAdmin={isAdmin} /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>
@@ -514,7 +516,7 @@ const parcelaStatusConfig: Record<string, { class: string; icon: typeof Clock }>
   atrasado: { class: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertTriangle },
 };
 
-function PagamentosTab({ eventoId, evento }: { eventoId: string; evento: any }) {
+function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento: any; isAdmin: boolean }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [valor, setValor] = useState("");
@@ -751,7 +753,7 @@ function PagamentosTab({ eventoId, evento }: { eventoId: string; evento: any }) 
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                        <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />
+                        {isAdmin && <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -800,7 +802,7 @@ function PagamentosTab({ eventoId, evento }: { eventoId: string; evento: any }) 
           <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
             <span>Parcelas de Pagamento</span>
             <div className="flex items-center gap-2">
-              {parcelas.length > 0 && (
+              {isAdmin && parcelas.length > 0 && (
                 <DeleteConfirmDialog
                   onConfirm={() => deletarTodasParcelasMut.mutate()}
                   title="Excluir todas as parcelas"

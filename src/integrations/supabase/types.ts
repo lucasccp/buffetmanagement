@@ -23,6 +23,7 @@ export type Database = {
           evento_id: string | null
           id: string
           nota_fiscal_url: string | null
+          referencia_id: string | null
           tipo: Database["public"]["Enums"]["movimentacao_tipo"]
           valor: number
         }
@@ -34,6 +35,7 @@ export type Database = {
           evento_id?: string | null
           id?: string
           nota_fiscal_url?: string | null
+          referencia_id?: string | null
           tipo: Database["public"]["Enums"]["movimentacao_tipo"]
           valor: number
         }
@@ -45,6 +47,7 @@ export type Database = {
           evento_id?: string | null
           id?: string
           nota_fiscal_url?: string | null
+          referencia_id?: string | null
           tipo?: Database["public"]["Enums"]["movimentacao_tipo"]
           valor?: number
         }
