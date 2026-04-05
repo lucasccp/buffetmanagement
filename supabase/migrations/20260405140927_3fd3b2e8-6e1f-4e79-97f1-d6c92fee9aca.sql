@@ -1,0 +1,2 @@
+ALTER TABLE public.caixa_movimentacoes DROP CONSTRAINT caixa_movimentacoes_evento_id_fkey;
+ALTER TABLE public.caixa_movimentacoes ADD CONSTRAINT caixa_movimentacoes_evento_id_fkey FOREIGN KEY (evento_id) REFERENCES public.eventos(id) ON DELETE CASCADE;
