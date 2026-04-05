@@ -49,6 +49,14 @@ export default function Leads() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); setOpen(false); setForm({}); toast.success("Lead criado!"); },
   });
 
+  const deleteMut = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("leads").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["leads"] }); toast.success("Lead removido!"); },
+  });
+
   const updateStatus = useMutation({
     mutationFn: async ({ id, status }: { id: string; status: Enums<"lead_status"> }) => {
       const { error } = await supabase.from("leads").update({ status }).eq("id", id);
