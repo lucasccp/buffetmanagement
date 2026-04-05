@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun, LogOut, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
@@ -12,6 +12,7 @@ const navItems = [
   { to: "/equipe", label: "Equipe", icon: UsersRound },
   { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed },
   { to: "/caixa", label: "Caixa", icon: Wallet },
+  { to: "/usuarios", label: "Usuários", icon: ShieldCheck },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
