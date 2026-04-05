@@ -802,12 +802,13 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
           <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
             <span>Parcelas de Pagamento</span>
             <div className="flex items-center gap-2">
-              {parcelas.length > 0 && (
+              {isAdmin && parcelas.length > 0 && (
                 <DeleteConfirmDialog
                   onConfirm={() => deletarTodasParcelasMut.mutate()}
                   title="Excluir todas as parcelas"
                   description="Deseja excluir todas as parcelas deste evento? Isso não pode ser desfeito."
                 />
+              )}
               )}
               <Dialog open={openGerar} onOpenChange={setOpenGerar}>
                 <DialogTrigger asChild>
