@@ -56,3 +56,9 @@ export const metodoPagamentoLabels: Record<string, string> = {
   boleto: "Boleto",
   outro: "Outro",
 };
+
+export const parcelaStatusLabels: Record<string, string> = {
+  pendente: "Pendente",
+  pago: "Pago",
+  atrasado: "Atrasado",
+};
