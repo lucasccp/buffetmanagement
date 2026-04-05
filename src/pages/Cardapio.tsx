@@ -23,6 +23,7 @@ export default function Cardapio() {
   const [itensNomes, setItensNomes] = useState<string[]>([""]);
   const [viewId, setViewId] = useState<string | null>(null);
   const [pdfCardapioId, setPdfCardapioId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [empresaNome, setEmpresaNome] = useState("Minha Empresa");
   const [empresaTelefone, setEmpresaTelefone] = useState("(00) 00000-0000");
   const [empresaInstagram, setEmpresaInstagram] = useState("@minhaempresa");
