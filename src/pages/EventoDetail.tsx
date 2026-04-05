@@ -75,18 +75,18 @@ export default function EventoDetail() {
             <h1 className="text-xl font-semibold tracking-tight">{evento.nome_evento}</h1>
             <p className="text-sm text-muted-foreground">{formatDate(evento.data_evento)} · {evento.local ?? "Sem local"}</p>
           </div>
-          <div className="flex gap-3">
+          <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
             <Card className="border shadow-none px-3 py-2">
               <div className="text-[10px] text-muted-foreground font-medium">Custos</div>
-              <div className="text-base font-semibold text-destructive">{formatCurrency(custoTotal)}</div>
+              <div className="text-sm sm:text-base font-semibold text-destructive">{formatCurrency(custoTotal)}</div>
             </Card>
             <Card className="border shadow-none px-3 py-2">
               <div className="text-[10px] text-muted-foreground font-medium">Recebido</div>
-              <div className="text-base font-semibold text-success">{formatCurrency(pagamentoTotal)}</div>
+              <div className="text-sm sm:text-base font-semibold text-success">{formatCurrency(pagamentoTotal)}</div>
             </Card>
             <Card className="border shadow-none px-3 py-2">
               <div className="text-[10px] text-muted-foreground font-medium">Lucro</div>
-              <div className={`text-base font-semibold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{formatCurrency(lucro)}</div>
+              <div className={`text-sm sm:text-base font-semibold ${lucro >= 0 ? "text-success" : "text-destructive"}`}>{formatCurrency(lucro)}</div>
             </Card>
           </div>
         </div>
@@ -133,7 +133,7 @@ function GeralTab({ evento, onUpdate }: { evento: any; onUpdate: (v: any) => voi
           <div><Label className="text-xs">Horário Início</Label><Input type="time" value={form.horario_inicio ?? ""} onChange={(e) => setForm({ ...form, horario_inicio: e.target.value })} className="mt-1" /></div>
           <div><Label className="text-xs">Horário Fim</Label><Input type="time" value={form.horario_fim ?? ""} onChange={(e) => setForm({ ...form, horario_fim: e.target.value })} className="mt-1" /></div>
         </div>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div><Label className="text-xs">Convidados</Label><Input type="number" value={form.numero_convidados ?? ""} onChange={(e) => setForm({ ...form, numero_convidados: parseInt(e.target.value) || null })} className="mt-1" /></div>
           <div><Label className="text-xs">Valor Total</Label><Input type="number" step="0.01" value={form.valor_total ?? ""} onChange={(e) => setForm({ ...form, valor_total: parseFloat(e.target.value) || null })} className="mt-1" /></div>
           <div>
@@ -687,7 +687,7 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
         <CardHeader className="pb-3">
           <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
             <span>Pagamentos</span>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs text-muted-foreground font-normal">Total: {formatCurrency(totalPlanejado)}</span>
               <span className="text-xs text-success font-normal">Recebido: {formatCurrency(totalPago)}</span>
               <Dialog open={open} onOpenChange={setOpen}>
