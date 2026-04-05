@@ -130,7 +130,7 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
         onOpenChange(v);
       }}
     >
-      <DialogContent className="max-w-lg overflow-hidden">
+      <DialogContent className="max-w-xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {step === "upload" ? (
