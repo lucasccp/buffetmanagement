@@ -17,7 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels } from "@/lib/formatters";
-import { Plus, Trash2, Pencil } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 
 export default function EventoDetail() {
   const { id } = useParams<{ id: string }>();
@@ -253,7 +254,7 @@ function EquipeTab({ eventoId }: { eventoId: string }) {
                 <TableCell>
                   <div className="flex gap-0.5">
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(ee)}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(ee.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    <DeleteConfirmDialog onConfirm={() => removeMut.mutate(ee.id)} title="Remover membro" description={`Remover "${ee.equipe?.nome}" do evento?`} />
                   </div>
                 </TableCell>
               </TableRow>
@@ -383,7 +384,7 @@ function CustosTab({ eventoId }: { eventoId: string }) {
                 <TableCell>
                   <div className="flex gap-0.5">
                     <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(c)}><Pencil className="h-3.5 w-3.5" /></Button>
-                    <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(c.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    <DeleteConfirmDialog onConfirm={() => removeMut.mutate(c.id)} title="Excluir custo" description={`Excluir "${c.descricao}"?`} />
                   </div>
                 </TableCell>
               </TableRow>
@@ -490,7 +491,7 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
                   <h4 className="text-sm font-medium">{ec.cardapios?.nome}</h4>
                   <p className="text-xs text-muted-foreground">{formatCurrency(ec.cardapios?.valor_sugerido_pp)}/pessoa</p>
                 </div>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(ec.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                <DeleteConfirmDialog onConfirm={() => removeMut.mutate(ec.id)} title="Desvincular cardápio" description={`Remover "${ec.cardapios?.nome}" do evento?`} />
               </div>
               <div className="flex flex-wrap gap-1">
                 {ec.cardapios?.cardapio_itens?.map((i: any) => <Badge key={i.id} variant="outline" className="text-xs font-normal">{i.nome}</Badge>)}
@@ -665,7 +666,7 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
                   <TableCell>
                     <div className="flex gap-0.5">
                       <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(p.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                      <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />
                     </div>
                   </TableCell>
                 </TableRow>

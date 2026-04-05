@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency } from "@/lib/formatters";
 
 export default function Equipe() {
@@ -81,7 +82,7 @@ export default function Equipe() {
                     <TableCell className="text-sm text-muted-foreground">{e.funcao ?? "—"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{e.telefone ?? "—"}</TableCell>
                     <TableCell className="text-sm font-medium">{formatCurrency(e.custo_por_evento)}</TableCell>
-                    <TableCell><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMut.mutate(e.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button></TableCell>
+                    <TableCell><DeleteConfirmDialog onConfirm={() => deleteMut.mutate(e.id)} title="Excluir membro" description={`Tem certeza que deseja excluir "${e.nome}"? Esta ação não pode ser desfeita.`} /></TableCell>
                   </TableRow>
                 ))}
                 {equipe.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-12 text-sm">Nenhum membro cadastrado</TableCell></TableRow>}

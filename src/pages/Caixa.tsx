@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Plus, Trash2, ExternalLink, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { Plus, ExternalLink, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency, formatDate } from "@/lib/formatters";
 
 export default function Caixa() {
@@ -191,9 +192,7 @@ export default function Caixa() {
                     </TableCell>
                     <TableCell>
                       {!m.automatica && (
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMut.mutate(m.id)}>
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                        </Button>
+                        <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(m.id)} title="Excluir movimentação" description="Tem certeza que deseja excluir esta movimentação? Esta ação não pode ser desfeita." />
                       )}
                     </TableCell>
                   </TableRow>

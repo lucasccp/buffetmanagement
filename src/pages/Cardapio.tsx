@@ -9,7 +9,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Trash2, Eye, X } from "lucide-react";
+import { Plus, Eye, X } from "lucide-react";
+import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency } from "@/lib/formatters";
 
 export default function Cardapio() {
@@ -119,7 +120,7 @@ export default function Cardapio() {
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setViewId(c.id)}><Eye className="h-3.5 w-3.5" /></Button>
-                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => deleteMut.mutate(c.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                        <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(c.id)} title="Excluir cardápio" description={`Tem certeza que deseja excluir "${c.nome}"? Esta ação não pode ser desfeita.`} />
                       </div>
                     </TableCell>
                   </TableRow>
