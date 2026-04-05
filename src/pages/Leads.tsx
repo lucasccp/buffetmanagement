@@ -150,9 +150,12 @@ export default function Leads() {
                       </Select>
                     </TableCell>
                     <TableCell>
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="flex gap-0.5">
+                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </Button>
+                        <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(lead.id)} title="Excluir lead" description={`Tem certeza que deseja excluir "${lead.nome}"? Esta ação não pode ser desfeita.`} />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
