@@ -11,6 +11,7 @@ import { Upload, FileText, Check, X, Loader2, Sparkles, Pencil, Trash2 } from "l
 import { parsePdfCardapio, type ParsedCardapio, type ParsedItem } from "@/lib/parsePdfCardapio";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
+
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
