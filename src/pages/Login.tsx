@@ -22,6 +22,7 @@ function useIsWebView() {
 }
 
 export default function Login() {
+  const isWebView = useIsWebView();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
