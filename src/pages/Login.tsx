@@ -18,9 +18,19 @@ export default function Login() {
   const [rememberMe, setRememberMe] = useState(false);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
-
-  // Redirect if already logged in
   const { user, loading: authLoading } = useAuth();
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+  const rotateX = useTransform(() => {
+    const y = mouseY.get();
+    return 10 - (y + 300) * 20 / 600;
+  });
+  const rotateY = useTransform(() => {
+    const x = mouseX.get();
+    return -10 + (x + 300) * 20 / 600;
+  });
+
   React.useEffect(() => {
     if (!authLoading && user) {
       navigate("/dashboard", { replace: true });
@@ -35,17 +45,6 @@ export default function Login() {
       </div>
     );
   }
-
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-  const rotateX = useTransform(() => {
-    const y = mouseY.get();
-    return 10 - (y + 300) * 20 / 600;
-  });
-  const rotateY = useTransform(() => {
-    const x = mouseX.get();
-    return -10 + (x + 300) * 20 / 600;
-  });
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
