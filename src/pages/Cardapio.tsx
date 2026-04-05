@@ -9,9 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Eye, X } from "lucide-react";
+import { Plus, Eye, X, FileText } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency } from "@/lib/formatters";
+import { generateCardapioPdf } from "@/lib/generateCardapioPdf";
 
 export default function Cardapio() {
   const qc = useQueryClient();
@@ -20,6 +21,11 @@ export default function Cardapio() {
   const [valorPP, setValorPP] = useState("");
   const [itensNomes, setItensNomes] = useState<string[]>([""]);
   const [viewId, setViewId] = useState<string | null>(null);
+  const [pdfCardapioId, setPdfCardapioId] = useState<string | null>(null);
+  const [empresaNome, setEmpresaNome] = useState("Minha Empresa");
+  const [empresaTelefone, setEmpresaTelefone] = useState("(00) 00000-0000");
+  const [empresaInstagram, setEmpresaInstagram] = useState("@minhaempresa");
+  const [empresaSlogan, setEmpresaSlogan] = useState("Sabor e qualidade para o seu evento");
 
   const { data: cardapios = [] } = useQuery({
     queryKey: ["cardapios"],
@@ -120,6 +126,7 @@ export default function Cardapio() {
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setViewId(c.id)}><Eye className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPdfCardapioId(c.id)} title="Gerar PDF"><FileText className="h-3.5 w-3.5" /></Button>
                         <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(c.id)} title="Excluir cardápio" description={`Tem certeza que deseja excluir "${c.nome}"? Esta ação não pode ser desfeita.`} />
                       </div>
                     </TableCell>
@@ -155,6 +162,28 @@ export default function Cardapio() {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={!!pdfCardapioId} onOpenChange={() => setPdfCardapioId(null)}>
+          <DialogContent className="max-w-md">
+            <DialogHeader><DialogTitle>Gerar PDF de Cotação</DialogTitle></DialogHeader>
+            <div className="space-y-3">
+              <div><Label className="text-xs">Nome da Empresa</Label><Input value={empresaNome} onChange={(e) => setEmpresaNome(e.target.value)} className="mt-1" /></div>
+              <div><Label className="text-xs">Telefone</Label><Input value={empresaTelefone} onChange={(e) => setEmpresaTelefone(e.target.value)} className="mt-1" /></div>
+              <div><Label className="text-xs">Instagram</Label><Input value={empresaInstagram} onChange={(e) => setEmpresaInstagram(e.target.value)} className="mt-1" /></div>
+              <div><Label className="text-xs">Slogan</Label><Input value={empresaSlogan} onChange={(e) => setEmpresaSlogan(e.target.value)} className="mt-1" /></div>
+              <Button className="w-full" size="sm" onClick={() => {
+                const cardapio = cardapios.find((c) => c.id === pdfCardapioId);
+                if (cardapio) {
+                  generateCardapioPdf([cardapio], { nome: empresaNome, telefone: empresaTelefone, instagram: empresaInstagram, slogan: empresaSlogan });
+                  setPdfCardapioId(null);
+                  toast.success("PDF gerado com sucesso!");
+                }
+              }}>
+                <FileText className="h-3.5 w-3.5 mr-1.5" />Gerar PDF
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
