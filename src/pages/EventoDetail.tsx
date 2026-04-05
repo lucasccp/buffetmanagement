@@ -104,7 +104,7 @@ export default function EventoDetail() {
           <TabsContent value="equipe"><EquipeTab eventoId={id!} /></TabsContent>
           <TabsContent value="custos"><CustosTab eventoId={id!} /></TabsContent>
           <TabsContent value="cardapio"><CardapioTab eventoId={id!} /></TabsContent>
-          <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} evento={evento} /></TabsContent>
+          <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} evento={evento} isAdmin={isAdmin} /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>
