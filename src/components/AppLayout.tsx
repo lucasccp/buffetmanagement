@@ -1,8 +1,9 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun } from "lucide-react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { LayoutDashboard, Users, CalendarDays, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun, LogOut } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
+import { useAuth } from "@/hooks/use-auth";
 
 const navItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
