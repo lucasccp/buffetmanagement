@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Upload, FileText, Check, X, Loader2, Sparkles, Pencil, Trash2 } from "lucide-react";
 import { parsePdfCardapio, type ParsedCardapio, type ParsedItem } from "@/lib/parsePdfCardapio";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 interface Props {
   open: boolean;
@@ -130,7 +130,7 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
         onOpenChange(v);
       }}
     >
-      <DialogContent className="max-w-lg overflow-hidden">
+      <DialogContent className="max-w-xl overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {step === "upload" ? (
@@ -192,8 +192,8 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
               <span>{parsed.categorias.length} categoria(s) • {totalItems} item(ns) detectado(s)</span>
             </div>
 
-            <div className="max-h-[50vh] sm:max-h-[320px] overflow-hidden flex-1 min-h-0">
-              <ScrollArea className="h-full">
+            <div className="max-h-[55vh] sm:max-h-[380px] overflow-hidden flex-1 min-h-0">
+              <ScrollArea className="h-full" type="always">
                 <div className="space-y-3 pr-3">
                   {parsed.categorias.map((cat, ci) => (
                     <div key={ci}>
@@ -246,14 +246,15 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
                     </div>
                   ))}
                 </div>
+                <ScrollBar orientation="horizontal" />
               </ScrollArea>
             </div>
 
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1" onClick={reset}>
+            <div className="flex gap-2 justify-center pt-2">
+              <Button variant="outline" size="sm" className="flex-1 max-w-[200px]" onClick={reset}>
                 <X className="h-3.5 w-3.5 mr-1" />Cancelar
               </Button>
-              <Button size="sm" className="flex-1" onClick={() => importMut.mutate()} disabled={importMut.isPending || totalItems === 0}>
+              <Button size="sm" className="flex-1 max-w-[200px]" onClick={() => importMut.mutate()} disabled={importMut.isPending || totalItems === 0}>
                 <Check className="h-3.5 w-3.5 mr-1" />Confirmar Importação
               </Button>
             </div>
