@@ -4,15 +4,15 @@ import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
+import { useRole } from "@/hooks/use-role";
 
-const navItems = [
+const baseNavItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
   { to: "/eventos", label: "Eventos", icon: CalendarDays },
   { to: "/equipe", label: "Equipe", icon: UsersRound },
   { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed },
   { to: "/caixa", label: "Caixa", icon: Wallet },
-  { to: "/usuarios", label: "Usuários", icon: ShieldCheck },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
