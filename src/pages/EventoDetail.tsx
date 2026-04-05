@@ -809,7 +809,6 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
                   description="Deseja excluir todas as parcelas deste evento? Isso não pode ser desfeito."
                 />
               )}
-              )}
               <Dialog open={openGerar} onOpenChange={setOpenGerar}>
                 <DialogTrigger asChild>
                   <Button size="sm" className="text-xs" disabled={parcelas.length > 0}>
