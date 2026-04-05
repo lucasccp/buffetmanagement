@@ -1,99 +1,47 @@
 
 
-# Plano: Página de Administração de Usuários com Controle de Acesso
+# Plano: Gestão Completa de Usuários (Criar, Reset Senha, Congelar, Alterar Papel)
 
 ## Resumo
-Criar um sistema de roles (admin/user), uma tabela de profiles, e uma página de administração onde admins veem todos os usuários e usuários comuns veem apenas seu próprio registro.
+Expandir a página de Usuários com funcionalidades administrativas completas: criar usuários, resetar senha, congelar/descongelar contas e alterar papéis. Tudo via modais (padrão do projeto).
 
-## Mudanças no Banco de Dados (3 migrações)
+## Mudanças no Banco de Dados
 
-### 1. Criar enum `app_role` e tabela `user_roles`
+### 1. Adicionar coluna `frozen` na tabela `profiles`
 ```sql
-CREATE TYPE public.app_role AS ENUM ('admin', 'user');
-
-CREATE TABLE public.user_roles (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  role app_role NOT NULL,
-  UNIQUE (user_id, role)
-);
-
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ADD COLUMN frozen boolean NOT NULL DEFAULT false;
 ```
 
-### 2. Criar função `has_role` (security definer) e policies
-```sql
-CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
-RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = public AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  )
-$$;
-
--- Admins veem todas as roles, usuários veem apenas as suas
-CREATE POLICY "Users can view own roles" ON public.user_roles
-  FOR SELECT USING (auth.uid() = user_id OR public.has_role(auth.uid(), 'admin'));
-```
-
-### 3. Criar tabela `profiles` com trigger automático
-```sql
-CREATE TABLE public.profiles (
-  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email text,
-  created_at timestamptz DEFAULT now()
-);
-
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- Admins veem todos, usuários veem apenas o seu
-CREATE POLICY "Users view own profile" ON public.profiles
-  FOR SELECT USING (auth.uid() = id OR public.has_role(auth.uid(), 'admin'));
-
-CREATE POLICY "Users update own profile" ON public.profiles
-  FOR UPDATE USING (auth.uid() = id);
-
--- Trigger: criar profile automaticamente no signup
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER
-SET search_path = public AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email)
-  VALUES (NEW.id, NEW.email);
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (NEW.id, 'user');
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-```
+### 2. Criar Edge Function `admin-manage-users`
+Uma edge function com o service role key para executar operações administrativas que requerem privilégios elevados:
+- **Criar usuário**: `supabase.auth.admin.createUser({ email, password })`
+- **Reset de senha**: `supabase.auth.admin.generateLink({ type: 'recovery', email })`  
+- **Congelar/Descongelar**: `supabase.auth.admin.updateUserById(id, { ban_duration })` + atualizar `profiles.frozen`
+- Verificação de role admin via `has_role` antes de executar qualquer ação
 
 ## Mudanças no Código
 
-### 4. Criar hook `src/hooks/use-role.ts`
-- Consulta `user_roles` para verificar se o usuário logado tem role `admin`
-- Exporta `{ isAdmin, loading }`
+### 3. Criar modal `CreateUserDialog`
+- Formulário com campos: email e senha
+- Chama a edge function para criar o usuário
+- Segue o padrão de modais do projeto (Dialog do shadcn/ui)
 
-### 5. Criar `src/components/AdminRoute.tsx`
-- Wrapper similar ao `ProtectedRoute`, mas verifica `isAdmin`
-- Redireciona para `/dashboard` se não for admin
+### 4. Atualizar `src/pages/Usuarios.tsx`
+- Adicionar botão "Novo Usuário" no header (apenas admin)
+- Adicionar coluna "Status" na tabela (Ativo/Congelado)
+- Expandir coluna "Ações" com dropdown menu contendo:
+  - **Alterar Papel** (Admin/Usuário) -- já existente, mover para dropdown
+  - **Resetar Senha** -- envia email de recuperação
+  - **Congelar/Descongelar** -- bloqueia/desbloqueia o acesso
+- Atualizar a interface `Profile` para incluir `frozen`
 
-### 6. Criar `src/pages/Usuarios.tsx`
-- Se admin: lista todos os profiles (email, data de criação, role)
-- Se usuário comum: mostra apenas seu próprio registro
-- Admins podem promover/rebaixar usuários (adicionar/remover role admin)
-- Usa a mesma estética das outras páginas (AppLayout)
+### 5. Atualizar `src/hooks/use-auth.ts`
+- Após login, verificar se o profile está congelado e fazer signOut com mensagem de erro
 
-### 7. Atualizar `src/App.tsx`
-- Adicionar rota `/usuarios` protegida com `ProtectedRoute`
+## Detalhes Técnicos
 
-### 8. Atualizar `src/components/AppLayout.tsx`
-- Adicionar item "Usuários" na sidebar (visível para todos, mas com conteúdo filtrado por role)
-
-## Nota sobre o primeiro admin
-Após a migração, será necessário inserir manualmente o primeiro admin na tabela `user_roles` usando o ID do usuário desejado.
+- A edge function usa `SUPABASE_SERVICE_ROLE_KEY` (já configurado como secret) para operações admin
+- O congelamento usa `ban_duration` do Supabase Auth (`"876000h"` para banir, `"none"` para desbanir)
+- A coluna `frozen` no profiles serve para exibição na UI e verificação client-side
+- RLS: a coluna `frozen` é legível pelos mesmos policies existentes no profiles
 
