@@ -9,11 +9,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Eye, X, FileText, Upload } from "lucide-react";
+import { Plus, Eye, X, FileText, Upload, Pencil } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency } from "@/lib/formatters";
 import { generateCardapioPdf } from "@/lib/generateCardapioPdf";
 import { ImportCardapioDialog } from "@/components/ImportCardapioDialog";
+import { EditCardapioDialog } from "@/components/EditCardapioDialog";
 
 export default function Cardapio() {
   const qc = useQueryClient();
@@ -24,6 +25,7 @@ export default function Cardapio() {
   const [viewId, setViewId] = useState<string | null>(null);
   const [pdfCardapioId, setPdfCardapioId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
   const [empresaNome, setEmpresaNome] = useState("Minha Empresa");
   const [empresaTelefone, setEmpresaTelefone] = useState("(00) 00000-0000");
   const [empresaInstagram, setEmpresaInstagram] = useState("@minhaempresa");
@@ -133,6 +135,7 @@ export default function Cardapio() {
                     <TableCell>
                       <div className="flex gap-0.5">
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setViewId(c.id)}><Eye className="h-3.5 w-3.5" /></Button>
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setEditId(c.id)} title="Editar"><Pencil className="h-3.5 w-3.5" /></Button>
                         <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => setPdfCardapioId(c.id)} title="Gerar PDF"><FileText className="h-3.5 w-3.5" /></Button>
                         <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(c.id)} title="Excluir cardápio" description={`Tem certeza que deseja excluir "${c.nome}"? Esta ação não pode ser desfeita.`} />
                       </div>
@@ -195,6 +198,7 @@ export default function Cardapio() {
         </Dialog>
 
         <ImportCardapioDialog open={importOpen} onOpenChange={setImportOpen} />
+        <EditCardapioDialog cardapio={cardapios.find((c) => c.id === editId) ?? null} open={!!editId} onOpenChange={() => setEditId(null)} />
       </div>
     </AppLayout>
   );
