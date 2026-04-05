@@ -687,7 +687,7 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
         <CardHeader className="pb-3">
           <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
             <span>Pagamentos</span>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               <span className="text-xs text-muted-foreground font-normal">Total: {formatCurrency(totalPlanejado)}</span>
               <span className="text-xs text-success font-normal">Recebido: {formatCurrency(totalPago)}</span>
               <Dialog open={open} onOpenChange={setOpen}>

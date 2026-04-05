@@ -210,7 +210,7 @@ export default function Dashboard() {
         </div>
 
         <Tabs defaultValue="eventos" className="space-y-5">
-          <TabsList className="h-9">
+          <TabsList className="h-9 overflow-x-auto">
             <TabsTrigger value="eventos" className="text-xs gap-1.5"><CalendarDays className="h-3.5 w-3.5" />Eventos</TabsTrigger>
             <TabsTrigger value="caixa" className="text-xs gap-1.5"><Wallet className="h-3.5 w-3.5" />Caixa</TabsTrigger>
           </TabsList>

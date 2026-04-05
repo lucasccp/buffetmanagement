@@ -92,7 +92,7 @@ export default function Financeiro() {
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <h1 className="text-xl font-semibold tracking-tight">Controle de Pagamentos</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Input type="date" value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} className="w-36 h-8 text-xs" />
             <Input type="date" value={dataFim} onChange={(e) => setDataFim(e.target.value)} className="w-36 h-8 text-xs" />
           </div>

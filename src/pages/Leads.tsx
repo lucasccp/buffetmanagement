@@ -139,7 +139,7 @@ export default function Leads() {
                     <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">{lead.numero_convidados ?? "—"}</TableCell>
                     <TableCell>
                       <Select value={lead.status} onValueChange={(v) => updateStatus.mutate({ id: lead.id, status: v as Enums<"lead_status"> })}>
-                        <SelectTrigger className="w-[140px] h-7 text-xs border-0 p-0">
+                        <SelectTrigger className="w-[120px] h-7 text-xs border-0 p-0">
                           <Badge variant="outline" className={statusColors[lead.status]}>{leadStatusLabels[lead.status]}</Badge>
                         </SelectTrigger>
                         <SelectContent>
