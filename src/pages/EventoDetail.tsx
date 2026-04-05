@@ -516,7 +516,7 @@ const parcelaStatusConfig: Record<string, { class: string; icon: typeof Clock }>
   atrasado: { class: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertTriangle },
 };
 
-function PagamentosTab({ eventoId, evento }: { eventoId: string; evento: any }) {
+function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento: any; isAdmin: boolean }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [valor, setValor] = useState("");
