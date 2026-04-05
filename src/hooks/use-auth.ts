@@ -9,50 +9,39 @@ export function useAuth() {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          // Check if user is frozen
-          const { data: profile } = await supabase
-            .from("profiles")
-            .select("frozen")
-            .eq("id", session.user.id)
-            .maybeSingle();
-
-          if (profile?.frozen) {
-            await supabase.auth.signOut();
-            toast.error("Sua conta está congelada. Entre em contato com o administrador.");
-            setUser(null);
-            setLoading(false);
-            return;
-          }
-        }
+      (_event, session) => {
         setUser(session?.user ?? null);
         setLoading(false);
       }
     );
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (session?.user) {
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("frozen")
-          .eq("id", session.user.id)
-          .maybeSingle();
-
-        if (profile?.frozen) {
-          await supabase.auth.signOut();
-          toast.error("Sua conta está congelada. Entre em contato com o administrador.");
-          setUser(null);
-          setLoading(false);
-          return;
-        }
-      }
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Background frozen check
+  useEffect(() => {
+    if (!user) return;
+
+    const checkFrozen = async () => {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("frozen")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (profile?.frozen) {
+        await supabase.auth.signOut();
+        toast.error("Sua conta está congelada. Entre em contato com o administrador.");
+      }
+    };
+
+    checkFrozen();
+  }, [user?.id]);
 
   const signOut = async () => {
     await supabase.auth.signOut();
