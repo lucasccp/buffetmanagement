@@ -29,8 +29,14 @@ export default function Login() {
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
-  const rotateX = useTransform(mouseY, [-300, 300], [10, -10]);
-  const rotateY = useTransform(mouseX, [-300, 300], [-10, 10]);
+  const rotateX = useTransform(() => {
+    const y = mouseY.get();
+    return 10 - (y + 300) * 20 / 600;
+  });
+  const rotateY = useTransform(() => {
+    const x = mouseX.get();
+    return -10 + (x + 300) * 20 / 600;
+  });
 
   const handleMouseMove = (e: React.MouseEvent) => {
     const rect = e.currentTarget.getBoundingClientRect();
