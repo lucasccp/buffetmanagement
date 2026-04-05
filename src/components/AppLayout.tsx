@@ -19,7 +19,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
   const { signOut } = useAuth();
+  const { isAdmin } = useRole();
   const navigate = useNavigate();
+
+  const navItems = [
+    ...baseNavItems,
+    ...(isAdmin ? [{ to: "/usuarios", label: "Usuários", icon: ShieldCheck }] : []),
+  ];
 
   const handleLogout = async () => {
     await signOut();
