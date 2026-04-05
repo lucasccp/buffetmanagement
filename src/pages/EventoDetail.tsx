@@ -491,7 +491,7 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
                   <h4 className="text-sm font-medium">{ec.cardapios?.nome}</h4>
                   <p className="text-xs text-muted-foreground">{formatCurrency(ec.cardapios?.valor_sugerido_pp)}/pessoa</p>
                 </div>
-                <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => removeMut.mutate(ec.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                <DeleteConfirmDialog onConfirm={() => removeMut.mutate(ec.id)} title="Desvincular cardápio" description={`Remover "${ec.cardapios?.nome}" do evento?`} />
               </div>
               <div className="flex flex-wrap gap-1">
                 {ec.cardapios?.cardapio_itens?.map((i: any) => <Badge key={i.id} variant="outline" className="text-xs font-normal">{i.nome}</Badge>)}
