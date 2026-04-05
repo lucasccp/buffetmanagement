@@ -1,12 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, useMotionValue, useTransform } from "framer-motion";
-import { Mail, Lock, Eye, EyeClosed, ArrowRight, Sun, Moon } from "lucide-react";
+import { Mail, Lock, Eye, EyeClosed, ArrowRight, Sun, Moon, ExternalLink } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { useTheme } from "@/hooks/use-theme";
 import { useAuth } from "@/hooks/use-auth";
+
+function useIsWebView() {
+  return useMemo(() => {
+    const ua = navigator.userAgent || "";
+    const isIOS = /iPhone|iPad|iPod/.test(ua);
+    if (!isIOS) return false;
+    // Detect in-app browsers (WebViews) on iOS
+    const isWebView =
+      /FBAN|FBAV|Instagram|Line\/|Twitter|MicroMessenger|GSA\/|CriOS.*wv|LinkedIn/i.test(ua) ||
+      (!/Safari/i.test(ua) && /AppleWebKit/i.test(ua));
+    return isWebView;
+  }, []);
+}
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
