@@ -9,10 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Eye, X, FileText } from "lucide-react";
+import { Plus, Eye, X, FileText, Upload } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency } from "@/lib/formatters";
 import { generateCardapioPdf } from "@/lib/generateCardapioPdf";
+import { ImportCardapioDialog } from "@/components/ImportCardapioDialog";
 
 export default function Cardapio() {
   const qc = useQueryClient();
@@ -22,6 +23,7 @@ export default function Cardapio() {
   const [itensNomes, setItensNomes] = useState<string[]>([""]);
   const [viewId, setViewId] = useState<string | null>(null);
   const [pdfCardapioId, setPdfCardapioId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
   const [empresaNome, setEmpresaNome] = useState("Minha Empresa");
   const [empresaTelefone, setEmpresaTelefone] = useState("(00) 00000-0000");
   const [empresaInstagram, setEmpresaInstagram] = useState("@minhaempresa");
@@ -66,37 +68,42 @@ export default function Cardapio() {
   return (
     <AppLayout>
       <div className="space-y-5">
-        <div className="flex items-center justify-between">
+         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold tracking-tight">Cardápios</h1>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Cardápio</Button></DialogTrigger>
-            <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }} className="space-y-3">
-                <div><Label className="text-xs">Nome *</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" /></div>
-                <div><Label className="text-xs">Valor Sugerido por Pessoa</Label><Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" /></div>
-                <div>
-                  <Label className="text-xs">Itens do Cardápio</Label>
-                  <div className="space-y-2 mt-1.5">
-                    {itensNomes.map((item, idx) => (
-                      <div key={idx} className="flex gap-2">
-                        <Input placeholder={`Item ${idx + 1}`} value={item} onChange={(e) => updateItemField(idx, e.target.value)} />
-                        {itensNomes.length > 1 && (
-                          <Button type="button" size="sm" variant="ghost" className="h-9 w-9 p-0 shrink-0" onClick={() => removeItemField(idx)}>
-                            <X className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                    <Button type="button" variant="outline" size="sm" onClick={addItemField} className="text-xs">
-                      <Plus className="h-3 w-3 mr-1" />Adicionar Item
-                    </Button>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+              <Upload className="h-3.5 w-3.5 mr-1.5" />Importar PDF
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Cardápio</Button></DialogTrigger>
+              <DialogContent className="max-w-lg">
+                <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
+                <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }} className="space-y-3">
+                  <div><Label className="text-xs">Nome *</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" /></div>
+                  <div><Label className="text-xs">Valor Sugerido por Pessoa</Label><Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" /></div>
+                  <div>
+                    <Label className="text-xs">Itens do Cardápio</Label>
+                    <div className="space-y-2 mt-1.5">
+                      {itensNomes.map((item, idx) => (
+                        <div key={idx} className="flex gap-2">
+                          <Input placeholder={`Item ${idx + 1}`} value={item} onChange={(e) => updateItemField(idx, e.target.value)} />
+                          {itensNomes.length > 1 && (
+                            <Button type="button" size="sm" variant="ghost" className="h-9 w-9 p-0 shrink-0" onClick={() => removeItemField(idx)}>
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                      <Button type="button" variant="outline" size="sm" onClick={addItemField} className="text-xs">
+                        <Plus className="h-3 w-3 mr-1" />Adicionar Item
+                      </Button>
+                    </div>
                   </div>
-                </div>
-                <Button type="submit" className="w-full" size="sm" disabled={createMut.isPending}>Cadastrar</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <Button type="submit" className="w-full" size="sm" disabled={createMut.isPending}>Cadastrar</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
         <div className="rounded-lg border bg-card overflow-hidden">
@@ -186,6 +193,8 @@ export default function Cardapio() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <ImportCardapioDialog open={importOpen} onOpenChange={setImportOpen} />
       </div>
     </AppLayout>
   );
