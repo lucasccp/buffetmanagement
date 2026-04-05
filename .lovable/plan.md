@@ -1,30 +1,38 @@
 
 
-# Plano: Otimizar velocidade do login
+# Plano: Integrar parcelas na aba Pagamentos e criar trigger de entrada no caixa
 
-## Problema identificado
+## Resumo
 
-O hook `useAuth` está fazendo chamadas assíncronas ao banco de dados **dentro** do listener `onAuthStateChange`, o que bloqueia a atualização do estado de autenticação. Isso causa lentidão porque:
+Remover a aba "Parcelas" separada do EventoDetail e mover o botão "Gerar Parcelas" + listagem de parcelas para dentro da aba "Pagamentos" existente. Criar um trigger no banco para que, ao marcar uma parcela como "pago", uma entrada seja automaticamente registrada no caixa.
 
-1. O listener `onAuthStateChange` faz `await` numa query ao banco (verificar `frozen`) antes de atualizar o estado do usuário
-2. O `getSession` faz a mesma query duplicada
-3. O usuário fica preso no spinner de loading enquanto essas queries completam
-4. Cada mudança de estado auth dispara uma query desnecessária ao banco
+## Alterações
 
-## Solução
+### 1. Banco de dados — Trigger para parcela paga → entrada no caixa
 
-Refatorar o `useAuth` para **definir o usuário imediatamente** a partir da sessão e verificar o status `frozen` em paralelo, sem bloquear a navegação.
+Criar migration com trigger `fn_parcela_paga_caixa` na tabela `parcelas_pagamento`:
+- Quando `status` muda para `'pago'`, inserir entrada em `caixa_movimentacoes` com tipo `'entrada'`, valor da parcela, evento_id, e `automatica = true`
+- Buscar `nome_evento` do evento para a descrição (ex: "Parcela #2 - Nome do Evento")
 
-### Mudanças em `src/hooks/use-auth.ts`
+### 2. EventoDetail — Remover aba Parcelas, integrar na aba Pagamentos
 
-1. No `onAuthStateChange`: definir `setUser(session?.user)` e `setLoading(false)` **imediatamente**, sem await
-2. Mover a verificação de `frozen` para um `useEffect` separado que roda quando `user` muda
-3. Esse efeito verifica `frozen` em background e faz signOut apenas se necessário
-4. Eliminar a query duplicada no `getSession` — usar apenas o listener como fonte de verdade, com `getSession` apenas para o estado inicial síncrono
+**`src/pages/EventoDetail.tsx`**:
+- Remover import do `ParcelasTab`
+- Remover `<TabsTrigger value="parcelas">` e `<TabsContent value="parcelas">`
+- Na função `PagamentosTab`, adicionar:
+  - Queries de parcelas (`parcelas_pagamento`) e resumo (`get_parcelas_resumo`)
+  - Botão "Gerar Parcelas" com dialog (lógica vinda do `ParcelasTab`)
+  - Seção de parcelas abaixo da tabela de pagamentos existente, com cards de resumo e tabela de parcelas
+  - Botão "Pagar" em cada parcela pendente/atrasada
+  - Botão "Excluir Todas" as parcelas
 
-### Resultado esperado
+### 3. Limpeza
 
-- Login instantâneo (sem esperar query ao banco para atualizar o estado)
-- Verificação de congelamento acontece em background, sem bloquear a UX
-- Usuários congelados ainda são desconectados, mas sem atrasar o fluxo normal
+- Remover arquivo `src/components/ParcelasTab.tsx` (não mais necessário)
+
+## Detalhes técnicos
+
+- O trigger usa `SECURITY DEFINER` e `search_path = 'public'`
+- A condição do trigger: `NEW.status = 'pago' AND (OLD IS NULL OR OLD.status <> 'pago')` — evita duplicar entradas
+- Invalidar queries de `caixa_movimentacoes` após marcar parcela como paga no frontend
 
