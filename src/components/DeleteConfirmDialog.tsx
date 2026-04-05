@@ -27,14 +27,14 @@ export function DeleteConfirmDialog({
 }: DeleteConfirmDialogProps) {
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>
+      <AlertDialogTrigger asChild onClick={(e) => e.stopPropagation()}>
         {children ?? (
           <Button size="sm" variant="ghost" className="h-7 w-7 p-0">
             <Trash2 className="h-3.5 w-3.5 text-destructive" />
           </Button>
         )}
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
