@@ -18,6 +18,15 @@ export default function Login() {
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
 
+  // Redirect if already logged in
+  const { user, loading: authLoading } = useAuth();
+  React.useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [user, authLoading, navigate]);
+  const { theme, toggleTheme } = useTheme();
+
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const rotateX = useTransform(mouseY, [-300, 300], [10, -10]);
