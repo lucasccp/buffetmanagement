@@ -26,7 +26,6 @@ export default function Login() {
       navigate("/dashboard", { replace: true });
     }
   }, [user, authLoading, navigate]);
-  const { theme, toggleTheme } = useTheme();
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
