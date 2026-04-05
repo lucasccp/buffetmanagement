@@ -193,6 +193,8 @@ export default function Cardapio() {
             </div>
           </DialogContent>
         </Dialog>
+
+        <ImportCardapioDialog open={importOpen} onOpenChange={setImportOpen} />
       </div>
     </AppLayout>
   );
