@@ -507,7 +507,14 @@ function CardapioTab({ eventoId }: { eventoId: string }) {
 }
 
 // ─── PAGAMENTOS TAB ────────────────────────────────────────────
-function PagamentosTab({ eventoId }: { eventoId: string }) {
+
+const parcelaStatusConfig: Record<string, { class: string; icon: typeof Clock }> = {
+  pendente: { class: "bg-muted text-muted-foreground", icon: Clock },
+  pago: { class: "bg-success/10 text-success border-success/20", icon: CheckCircle },
+  atrasado: { class: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertTriangle },
+};
+
+function PagamentosTab({ eventoId, evento }: { eventoId: string; evento: any }) {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [valor, setValor] = useState("");
@@ -519,12 +526,38 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
   const [editItem, setEditItem] = useState<any>(null);
   const [editForm, setEditForm] = useState<any>({});
 
+  // Parcelas state
+  const [openGerar, setOpenGerar] = useState(false);
+  const [numParcelas, setNumParcelas] = useState("1");
+  const [valorTotalParcelas, setValorTotalParcelas] = useState("");
+  const [dataInicial, setDataInicial] = useState("");
+
   const { data: pagamentos = [] } = useQuery({
     queryKey: ["pagamentos_evento", eventoId],
     queryFn: async () => {
       const { data, error } = await supabase.from("pagamentos_evento").select("*").eq("evento_id", eventoId).order("data_planejada");
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Parcelas queries
+  const { data: parcelas = [] } = useQuery({
+    queryKey: ["parcelas_pagamento", eventoId],
+    queryFn: async () => {
+      await supabase.rpc("atualizar_parcelas_atrasadas");
+      const { data, error } = await supabase.from("parcelas_pagamento").select("*").eq("evento_id", eventoId).order("numero_parcela");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: resumoParcelas } = useQuery({
+    queryKey: ["parcelas_resumo", eventoId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_parcelas_resumo", { p_evento_id: eventoId });
+      if (error) throw error;
+      return data?.[0] ?? null;
     },
   });
 
@@ -587,6 +620,55 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["pagamentos_evento", eventoId] }); },
   });
 
+  // Parcelas mutations
+  const gerarMut = useMutation({
+    mutationFn: async () => {
+      const rawValor = valorTotalParcelas || String(evento?.valor_total ?? "");
+      const vt = parseFloat(rawValor);
+      const np = parseInt(numParcelas);
+      if (!vt || !np || !dataInicial) throw new Error("Preencha todos os campos");
+      const { error } = await supabase.rpc("gerar_parcelas", {
+        p_evento_id: eventoId, p_valor_total: vt, p_num_parcelas: np, p_data_inicial: dataInicial,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["parcelas_pagamento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["parcelas_resumo", eventoId] });
+      setOpenGerar(false);
+      toast.success("Parcelas geradas com sucesso!");
+    },
+    onError: (e: any) => toast.error(e.message || "Erro ao gerar parcelas"),
+  });
+
+  const pagarParcelaMut = useMutation({
+    mutationFn: async (parcelaId: string) => {
+      const { error } = await supabase
+        .from("parcelas_pagamento")
+        .update({ status: "pago" as any, data_pagamento: new Date().toISOString().split("T")[0] })
+        .eq("id", parcelaId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["parcelas_pagamento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["parcelas_resumo", eventoId] });
+      qc.invalidateQueries({ queryKey: ["caixa_movimentacoes"] });
+      toast.success("Parcela marcada como paga!");
+    },
+  });
+
+  const deletarTodasParcelasMut = useMutation({
+    mutationFn: async () => {
+      const { error } = await supabase.from("parcelas_pagamento").delete().eq("evento_id", eventoId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["parcelas_pagamento", eventoId] });
+      qc.invalidateQueries({ queryKey: ["parcelas_resumo", eventoId] });
+      toast.success("Parcelas removidas!");
+    },
+  });
+
   const openEdit = (p: any) => {
     setEditItem(p);
     setEditForm({
@@ -596,118 +678,256 @@ function PagamentosTab({ eventoId }: { eventoId: string }) {
   };
 
   return (
-    <Card className="mt-4 border shadow-none">
-      <CardHeader className="pb-3">
-        <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
-          <span>Pagamentos</span>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-muted-foreground font-normal">Total: {formatCurrency(totalPlanejado)}</span>
-            <span className="text-xs text-success font-normal">Recebido: {formatCurrency(totalPago)}</span>
-            <Dialog open={open} onOpenChange={setOpen}>
-              <DialogTrigger asChild><Button size="sm" className="text-xs"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo</Button></DialogTrigger>
-              <DialogContent>
-                <DialogHeader><DialogTitle>Novo Pagamento</DialogTitle></DialogHeader>
-                <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-3">
-                  <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} required className="mt-1" /></div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Data Planejada *</Label><Input type="date" value={dataPlanejada} onChange={(e) => setDataPlanejada(e.target.value)} required className="mt-1" /></div>
-                    <div><Label className="text-xs">Data Pagamento</Label><Input type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} className="mt-1" /></div>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Método</Label>
-                    <Select value={metodo} onValueChange={setMetodo}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>{Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label className="text-xs">Status</Label>
-                    <Select value={status} onValueChange={(v) => setStatus(v as "planejado" | "pago")}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                      <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </div>
-                  <Button type="submit" className="w-full" size="sm" disabled={!valor || !dataPlanejada}>Registrar</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="text-xs">Valor</TableHead>
-                <TableHead className="text-xs">Planejada</TableHead>
-                <TableHead className="text-xs hidden md:table-cell">Pagamento</TableHead>
-                <TableHead className="text-xs hidden md:table-cell">Método</TableHead>
-                <TableHead className="text-xs">Status</TableHead>
-                <TableHead className="text-xs w-[80px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {pagamentos.map((p) => (
-                <TableRow key={p.id}>
-                  <TableCell className="text-sm font-medium">{formatCurrency(p.valor)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDate(p.data_planejada)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(p.data_pagamento)}</TableCell>
-                  <TableCell className="text-sm hidden md:table-cell">{metodoPagamentoLabels[p.metodo_pagamento] ?? p.metodo_pagamento}</TableCell>
-                  <TableCell>
-                    <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, newStatus: v as "planejado" | "pago" })}>
-                      <SelectTrigger className="w-[100px] h-7 text-xs border-0 p-0">
-                        <Badge variant="outline" className={p.status === "pago" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
-                          {pagamentoEventoStatusLabels[p.status]}
-                        </Badge>
-                      </SelectTrigger>
-                      <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-0.5">
-                      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
-                      <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />
+    <div className="space-y-4 mt-4">
+      {/* Pagamentos Section */}
+      <Card className="border shadow-none">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
+            <span>Pagamentos</span>
+            <div className="flex items-center gap-3">
+              <span className="text-xs text-muted-foreground font-normal">Total: {formatCurrency(totalPlanejado)}</span>
+              <span className="text-xs text-success font-normal">Recebido: {formatCurrency(totalPago)}</span>
+              <Dialog open={open} onOpenChange={setOpen}>
+                <DialogTrigger asChild><Button size="sm" className="text-xs"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo</Button></DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Novo Pagamento</DialogTitle></DialogHeader>
+                  <form onSubmit={(e) => { e.preventDefault(); addMut.mutate(); }} className="space-y-3">
+                    <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={valor} onChange={(e) => setValor(e.target.value)} required className="mt-1" /></div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div><Label className="text-xs">Data Planejada *</Label><Input type="date" value={dataPlanejada} onChange={(e) => setDataPlanejada(e.target.value)} required className="mt-1" /></div>
+                      <div><Label className="text-xs">Data Pagamento</Label><Input type="date" value={dataPagamento} onChange={(e) => setDataPagamento(e.target.value)} className="mt-1" /></div>
                     </div>
-                  </TableCell>
+                    <div>
+                      <Label className="text-xs">Método</Label>
+                      <Select value={metodo} onValueChange={setMetodo}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>{Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Status</Label>
+                      <Select value={status} onValueChange={(v) => setStatus(v as "planejado" | "pago")}>
+                        <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                        <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="submit" className="w-full" size="sm" disabled={!valor || !dataPlanejada}>Registrar</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs">Valor</TableHead>
+                  <TableHead className="text-xs">Planejada</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Pagamento</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Método</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="text-xs w-[80px]"></TableHead>
                 </TableRow>
-              ))}
-              {pagamentos.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-sm">Nenhum pagamento registrado</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
+              </TableHeader>
+              <TableBody>
+                {pagamentos.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="text-sm font-medium">{formatCurrency(p.valor)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatDate(p.data_planejada)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(p.data_pagamento)}</TableCell>
+                    <TableCell className="text-sm hidden md:table-cell">{metodoPagamentoLabels[p.metodo_pagamento] ?? p.metodo_pagamento}</TableCell>
+                    <TableCell>
+                      <Select value={p.status} onValueChange={(v) => updateStatus.mutate({ id: p.id, newStatus: v as "planejado" | "pago" })}>
+                        <SelectTrigger className="w-[100px] h-7 text-xs border-0 p-0">
+                          <Badge variant="outline" className={p.status === "pago" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground"}>
+                            {pagamentoEventoStatusLabels[p.status]}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-0.5">
+                        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => openEdit(p)}><Pencil className="h-3.5 w-3.5" /></Button>
+                        <DeleteConfirmDialog onConfirm={() => removeMut.mutate(p.id)} title="Excluir pagamento" description={`Excluir pagamento de ${formatCurrency(p.valor)}?`} />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {pagamentos.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-sm">Nenhum pagamento registrado</TableCell></TableRow>}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
 
-      {/* Edit Modal */}
-      <Dialog open={!!editItem} onOpenChange={(v) => !v && setEditItem(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>Editar Pagamento</DialogTitle></DialogHeader>
-          {editItem && (
-            <form onSubmit={(e) => { e.preventDefault(); editMut.mutate(); }} className="space-y-3">
-              <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: parseFloat(e.target.value) })} required className="mt-1" /></div>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-xs">Data Planejada *</Label><Input type="date" value={editForm.data_planejada} onChange={(e) => setEditForm({ ...editForm, data_planejada: e.target.value })} required className="mt-1" /></div>
-                <div><Label className="text-xs">Data Pagamento</Label><Input type="date" value={editForm.data_pagamento} onChange={(e) => setEditForm({ ...editForm, data_pagamento: e.target.value })} className="mt-1" /></div>
+        {/* Edit Modal */}
+        <Dialog open={!!editItem} onOpenChange={(v) => !v && setEditItem(null)}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Editar Pagamento</DialogTitle></DialogHeader>
+            {editItem && (
+              <form onSubmit={(e) => { e.preventDefault(); editMut.mutate(); }} className="space-y-3">
+                <div><Label className="text-xs">Valor *</Label><Input type="number" step="0.01" value={editForm.valor} onChange={(e) => setEditForm({ ...editForm, valor: parseFloat(e.target.value) })} required className="mt-1" /></div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><Label className="text-xs">Data Planejada *</Label><Input type="date" value={editForm.data_planejada} onChange={(e) => setEditForm({ ...editForm, data_planejada: e.target.value })} required className="mt-1" /></div>
+                  <div><Label className="text-xs">Data Pagamento</Label><Input type="date" value={editForm.data_pagamento} onChange={(e) => setEditForm({ ...editForm, data_pagamento: e.target.value })} className="mt-1" /></div>
+                </div>
+                <div>
+                  <Label className="text-xs">Método</Label>
+                  <Select value={editForm.metodo_pagamento} onValueChange={(v) => setEditForm({ ...editForm, metodo_pagamento: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>{Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs">Status</Label>
+                  <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                    <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full" size="sm">Salvar</Button>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+      </Card>
+
+      {/* Parcelas Section */}
+      <Card className="border shadow-none">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm font-medium">
+            <span>Parcelas de Pagamento</span>
+            <div className="flex items-center gap-2">
+              {parcelas.length > 0 && (
+                <DeleteConfirmDialog
+                  onConfirm={() => deletarTodasParcelasMut.mutate()}
+                  title="Excluir todas as parcelas"
+                  description="Deseja excluir todas as parcelas deste evento? Isso não pode ser desfeito."
+                />
+              )}
+              <Dialog open={openGerar} onOpenChange={setOpenGerar}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="text-xs" disabled={parcelas.length > 0}>
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />Gerar Parcelas
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>Gerar Parcelas</DialogTitle></DialogHeader>
+                  <form onSubmit={(e) => { e.preventDefault(); gerarMut.mutate(); }} className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Valor Total *</Label>
+                      <Input
+                        type="number" step="0.01"
+                        value={valorTotalParcelas || (evento?.valor_total ?? "")}
+                        onChange={(e) => setValorTotalParcelas(e.target.value)}
+                        required className="mt-1"
+                        placeholder={evento?.valor_total ? `Sugestão: ${formatCurrency(evento.valor_total)}` : ""}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Nº de Parcelas *</Label>
+                        <Input type="number" min="1" max="48" value={numParcelas} onChange={(e) => setNumParcelas(e.target.value)} required className="mt-1" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Data Inicial *</Label>
+                        <Input type="date" value={dataInicial} onChange={(e) => setDataInicial(e.target.value)} required className="mt-1" />
+                      </div>
+                    </div>
+                    {valorTotalParcelas && numParcelas && parseInt(numParcelas) > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        {numParcelas}x de {formatCurrency(parseFloat(valorTotalParcelas) / parseInt(numParcelas))}
+                      </p>
+                    )}
+                    <Button type="submit" className="w-full" size="sm" disabled={gerarMut.isPending}>
+                      {gerarMut.isPending ? "Gerando..." : "Gerar Parcelas"}
+                    </Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Summary Cards */}
+          {resumoParcelas && (resumoParcelas as any).total_parcelas > 0 && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="rounded-lg border p-3">
+                <div className="text-[10px] text-muted-foreground font-medium">Total</div>
+                <div className="text-sm font-semibold">{formatCurrency((resumoParcelas as any).total_valor)}</div>
               </div>
-              <div>
-                <Label className="text-xs">Método</Label>
-                <Select value={editForm.metodo_pagamento} onValueChange={(v) => setEditForm({ ...editForm, metodo_pagamento: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{Object.entries(metodoPagamentoLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-                </Select>
+              <div className="rounded-lg border p-3">
+                <div className="text-[10px] text-success font-medium">Recebido</div>
+                <div className="text-sm font-semibold text-success">{formatCurrency((resumoParcelas as any).total_pago)}</div>
               </div>
-              <div>
-                <Label className="text-xs">Status</Label>
-                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{Object.entries(pagamentoEventoStatusLabels).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-                </Select>
+              <div className="rounded-lg border p-3">
+                <div className="text-[10px] text-muted-foreground font-medium">Pendente</div>
+                <div className="text-sm font-semibold">{formatCurrency((resumoParcelas as any).total_pendente)}</div>
               </div>
-              <Button type="submit" className="w-full" size="sm">Salvar</Button>
-            </form>
+              <div className="rounded-lg border p-3">
+                <div className="text-[10px] text-destructive font-medium">Atrasado</div>
+                <div className="text-sm font-semibold text-destructive">{formatCurrency((resumoParcelas as any).total_atrasado)}</div>
+              </div>
+            </div>
           )}
-        </DialogContent>
-      </Dialog>
-    </Card>
+
+          {/* Parcelas Table */}
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs">#</TableHead>
+                  <TableHead className="text-xs">Valor</TableHead>
+                  <TableHead className="text-xs">Vencimento</TableHead>
+                  <TableHead className="text-xs hidden md:table-cell">Pagamento</TableHead>
+                  <TableHead className="text-xs">Status</TableHead>
+                  <TableHead className="text-xs w-[80px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {parcelas.map((p: any) => {
+                  const cfg = parcelaStatusConfig[p.status] ?? parcelaStatusConfig.pendente;
+                  return (
+                    <TableRow key={p.id}>
+                      <TableCell className="text-sm text-muted-foreground">{p.numero_parcela}</TableCell>
+                      <TableCell className="text-sm font-medium">{formatCurrency(p.valor)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{formatDate(p.data_vencimento)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(p.data_pagamento)}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={cfg.class}>
+                          {parcelaStatusLabels[p.status] ?? p.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {p.status !== "pago" && (
+                          <Button
+                            size="sm" variant="ghost"
+                            className="h-7 text-xs gap-1 text-success hover:text-success"
+                            onClick={() => pagarParcelaMut.mutate(p.id)}
+                            disabled={pagarParcelaMut.isPending}
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            Pagar
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+                {parcelas.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-sm">
+                      Nenhuma parcela gerada. Clique em "Gerar Parcelas" para começar.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
