@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Plus, Eye, X, FileText } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency } from "@/lib/formatters";
+import { generateCardapioPdf } from "@/lib/generateCardapioPdf";
 
 export default function Cardapio() {
   const qc = useQueryClient();
@@ -20,6 +21,11 @@ export default function Cardapio() {
   const [valorPP, setValorPP] = useState("");
   const [itensNomes, setItensNomes] = useState<string[]>([""]);
   const [viewId, setViewId] = useState<string | null>(null);
+  const [pdfCardapioId, setPdfCardapioId] = useState<string | null>(null);
+  const [empresaNome, setEmpresaNome] = useState("Minha Empresa");
+  const [empresaTelefone, setEmpresaTelefone] = useState("(00) 00000-0000");
+  const [empresaInstagram, setEmpresaInstagram] = useState("@minhaempresa");
+  const [empresaSlogan, setEmpresaSlogan] = useState("Sabor e qualidade para o seu evento");
 
   const { data: cardapios = [] } = useQuery({
     queryKey: ["cardapios"],
