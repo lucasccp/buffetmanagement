@@ -938,3 +938,156 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
     </div>
   );
 }
+
+// ─── PROPOSTA TAB ────────────────────────────────────────────
+type PropostaData = {
+  abertura: string;
+  descricao_evento: string;
+  cardapio: string;
+  servicos: string;
+  investimento: string;
+  encerramento: string;
+};
+
+function PropostaTab({ eventoId }: { eventoId: string }) {
+  const [tom, setTom] = useState("premium");
+  const [proposta, setProposta] = useState<PropostaData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState("");
+
+  const propostaToText = (p: PropostaData) => {
+    return [p.abertura, p.descricao_evento, p.cardapio, p.servicos, p.investimento, p.encerramento].join("\n\n---\n\n");
+  };
+
+  const handleGenerate = async () => {
+    setLoading(true);
+    setEditing(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-proposta", {
+        body: { evento_id: eventoId, tom },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      setProposta(data.proposta);
+      setEditText(propostaToText(data.proposta));
+    } catch (e: any) {
+      toast.error(e.message || "Erro ao gerar proposta");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCopy = async () => {
+    const text = editing ? editText : proposta ? propostaToText(proposta) : "";
+    await navigator.clipboard.writeText(text);
+    toast.success("Proposta copiada!");
+  };
+
+  const handleEdit = () => {
+    if (proposta) {
+      setEditText(propostaToText(proposta));
+    }
+    setEditing(true);
+  };
+
+  const sectionLabels: Record<keyof PropostaData, string> = {
+    abertura: "Abertura",
+    descricao_evento: "Descrição do Evento",
+    cardapio: "Cardápio",
+    servicos: "Serviços Inclusos",
+    investimento: "Investimento",
+    encerramento: "Encerramento",
+  };
+
+  return (
+    <Card className="mt-4 border shadow-none">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium">
+          <Sparkles className="h-4 w-4 text-primary" />
+          Proposta Comercial com IA
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Tone selector */}
+        <div className="space-y-2">
+          <Label className="text-xs font-medium">Tom da proposta</Label>
+          <RadioGroup value={tom} onValueChange={setTom} className="flex gap-4">
+            {[
+              { value: "premium", label: "Premium" },
+              { value: "simples", label: "Simples" },
+              { value: "direto", label: "Direto" },
+            ].map((t) => (
+              <div key={t.value} className="flex items-center gap-1.5">
+                <RadioGroupItem value={t.value} id={`tom-${t.value}`} />
+                <Label htmlFor={`tom-${t.value}`} className="text-xs cursor-pointer">{t.label}</Label>
+              </div>
+            ))}
+          </RadioGroup>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={handleGenerate} disabled={loading} className="text-xs">
+            {loading ? (
+              <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Gerando...</>
+            ) : proposta ? (
+              <><RefreshCw className="h-3.5 w-3.5 mr-1.5" />Regenerar</>
+            ) : (
+              <><Sparkles className="h-3.5 w-3.5 mr-1.5" />Gerar Proposta com IA</>
+            )}
+          </Button>
+          {proposta && !loading && (
+            <>
+              <Button size="sm" variant="outline" onClick={handleEdit} disabled={editing} className="text-xs">
+                <FileText className="h-3.5 w-3.5 mr-1.5" />Editar manualmente
+              </Button>
+              <Button size="sm" variant="outline" onClick={handleCopy} className="text-xs">
+                <Copy className="h-3.5 w-3.5 mr-1.5" />Copiar
+              </Button>
+            </>
+          )}
+        </div>
+
+        {/* Content */}
+        {loading && (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex flex-col items-center gap-3 text-muted-foreground">
+              <RefreshCw className="h-6 w-6 animate-spin" />
+              <p className="text-sm">Gerando proposta personalizada...</p>
+            </div>
+          </div>
+        )}
+
+        {!loading && editing && (
+          <Textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            className="min-h-[400px] font-mono text-sm"
+          />
+        )}
+
+        {!loading && !editing && proposta && (
+          <div className="space-y-4">
+            {(Object.keys(sectionLabels) as (keyof PropostaData)[]).map((key) => (
+              <div key={key} className="space-y-1">
+                <h3 className="text-xs font-semibold text-primary uppercase tracking-wider">{sectionLabels[key]}</h3>
+                <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed rounded-md bg-muted/50 p-3">
+                  {proposta[key]}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {!loading && !proposta && (
+          <div className="text-center py-8 text-muted-foreground">
+            <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">Clique em "Gerar Proposta com IA" para criar uma proposta personalizada</p>
+            <p className="text-xs mt-1">A IA usará os dados do evento para gerar um texto profissional e persuasivo</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
