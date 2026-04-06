@@ -326,9 +326,11 @@ export type Database = {
       }
       leads: {
         Row: {
+          cardapio_id: string | null
           created_at: string
           data_prevista: string | null
           email: string | null
+          endereco: string | null
           id: string
           nome: string
           numero_convidados: number | null
@@ -336,11 +338,14 @@ export type Database = {
           status: Database["public"]["Enums"]["lead_status"]
           telefone: string | null
           tipo_evento: string | null
+          valor_evento: number | null
         }
         Insert: {
+          cardapio_id?: string | null
           created_at?: string
           data_prevista?: string | null
           email?: string | null
+          endereco?: string | null
           id?: string
           nome: string
           numero_convidados?: number | null
@@ -348,11 +353,14 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"]
           telefone?: string | null
           tipo_evento?: string | null
+          valor_evento?: number | null
         }
         Update: {
+          cardapio_id?: string | null
           created_at?: string
           data_prevista?: string | null
           email?: string | null
+          endereco?: string | null
           id?: string
           nome?: string
           numero_convidados?: number | null
@@ -360,8 +368,17 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"]
           telefone?: string | null
           tipo_evento?: string | null
+          valor_evento?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "leads_cardapio_id_fkey"
+            columns: ["cardapio_id"]
+            isOneToOne: false
+            referencedRelation: "cardapios"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pagamentos_evento: {
         Row: {
