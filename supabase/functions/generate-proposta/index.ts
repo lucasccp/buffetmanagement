@@ -81,6 +81,17 @@ serve(async (req) => {
       funcao: ee.equipe?.funcao ?? "—",
     }));
 
+    const itensInclusos = [
+      "Equipe completa",
+      "Copos de vidro",
+      "Pratos de cerâmica",
+      "Talheres de inox",
+      "Todos os utensílios descartáveis necessários",
+      "Rechaud",
+      "Suqueiras de vidro 5 Litros",
+      "Utensílios de inox",
+    ];
+
     const context = {
       evento: {
         nome: evento.nome_evento,
@@ -99,6 +110,7 @@ serve(async (req) => {
       },
       cardapio: itensCardapio,
       equipe: membrosEquipe,
+      itens_inclusos: itensInclusos,
     };
 
     const tomDescriptions: Record<string, string> = {
@@ -176,7 +188,7 @@ Gere a proposta usando a função generate_proposta.`;
                   },
                   servicos: {
                     type: "string",
-                    description: "Serviços inclusos: equipe, estrutura, atendimento",
+                    description: "Serviços inclusos: equipe, estrutura, atendimento. OBRIGATÓRIO: incluir todos os itens da lista 'itens_inclusos' do contexto (copos de vidro, pratos de cerâmica, talheres de inox, rechaud, suqueiras de vidro, utensílios descartáveis, utensílios de inox) de forma organizada e valorizada",
                   },
                   investimento: {
                     type: "string",
