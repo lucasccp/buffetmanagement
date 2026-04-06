@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
+import LeadDetail from "./pages/LeadDetail";
 import Eventos from "./pages/Eventos";
 import EventoDetail from "./pages/EventoDetail";
 import Equipe from "./pages/Equipe";
