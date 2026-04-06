@@ -17,6 +17,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels } from "@/lib/formatters";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Sparkles, Copy, RefreshCw, FileText } from "lucide-react";
 import { Plus, Pencil, CheckCircle, AlertTriangle, Clock } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { parcelaStatusLabels } from "@/lib/formatters";
