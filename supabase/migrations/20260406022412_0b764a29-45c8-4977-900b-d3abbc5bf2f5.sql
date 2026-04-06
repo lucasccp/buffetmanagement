@@ -1,0 +1,1 @@
+ALTER TABLE public.leads ADD COLUMN valor_evento numeric, ADD COLUMN endereco text, ADD COLUMN cardapio_id uuid REFERENCES public.cardapios(id) ON DELETE SET NULL;
