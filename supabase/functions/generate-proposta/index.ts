@@ -188,7 +188,7 @@ Gere a proposta usando a função generate_proposta.`;
                   },
                   servicos: {
                     type: "string",
-                    description: "Serviços inclusos: equipe, estrutura, atendimento",
+                    description: "Serviços inclusos: equipe, estrutura, atendimento. OBRIGATÓRIO: incluir todos os itens da lista 'itens_inclusos' do contexto (copos de vidro, pratos de cerâmica, talheres de inox, rechaud, suqueiras de vidro, utensílios descartáveis, utensílios de inox) de forma organizada e valorizada",
                   },
                   investimento: {
                     type: "string",
