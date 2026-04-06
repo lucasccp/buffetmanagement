@@ -1,46 +1,55 @@
 
 
-## Adicionar Itens Inclusos Fixos na Proposta Comercial
+## Proposta Comercial Focada no Lead
 
-### Problema
-A seção "Serviços Inclusos" da proposta gerada por IA só menciona a equipe do evento. Faltam itens padrão do buffet (copos, pratos, talheres, rechaud, etc.) que devem sempre aparecer.
+### Resumo
+Mover a geração de proposta do evento para o lead, adicionar campos novos ao lead (valor do evento, endereço, cardápio vinculado), criar uma página de detalhe do lead (`/leads/:id`), e adaptar a edge function para trabalhar com dados do lead.
 
-### Solução
-Incluir uma lista fixa de itens inclusos no contexto enviado à IA, para que ela mescle esses itens com os dados da equipe ao redigir a seção "servicos".
+### Alterações
 
-### Alteração
+#### 1. Migration: Adicionar colunas à tabela `leads`
+- `valor_evento` (numeric, nullable) — valor estimado do evento
+- `endereco` (text, nullable) — endereço do evento
+- `cardapio_id` (uuid, nullable) — referência ao cardápio vinculado
 
+#### 2. Nova rota `/leads/:id` — Página de detalhe do Lead
+**Arquivo:** `src/pages/LeadDetail.tsx` (novo)
+
+Página com:
+- Informações do lead (nome, telefone, email, tipo evento, data, convidados, valor, endereço, observações) — editáveis inline
+- Seletor de cardápio (select com cardápios disponíveis)
+- Aba/seção "Proposta com IA" — mesma UI que existe hoje no EventoDetail (tom selector, gerar, regenerar, editar, copiar)
+
+**Arquivo:** `src/App.tsx` — adicionar rota `/leads/:id` 
+
+**Arquivo:** `src/pages/Leads.tsx` — cada linha da tabela clicável (navegar para `/leads/:id`)
+
+#### 3. Adaptar Edge Function `generate-proposta`
 **Arquivo:** `supabase/functions/generate-proposta/index.ts`
 
-1. Adicionar array fixo de itens inclusos antes do objeto `context`:
-```typescript
-const itensInclusos = [
-  "Equipe completa",
-  "Copos de vidro",
-  "Pratos de cerâmica",
-  "Talheres de inox",
-  "Todos os utensílios descartáveis necessários",
-  "Rechaud",
-  "Suqueiras de vidro 5 Litros",
-  "Utensílios de inox",
-];
-```
+- Aceitar `lead_id` como alternativa a `evento_id`
+- Quando `lead_id` for passado:
+  - Buscar dados do lead (nome, tipo_evento, data_prevista, numero_convidados, valor_evento, endereco, observacoes)
+  - Buscar cardápio vinculado via `cardapio_id` → `cardapios` + `cardapio_itens`
+  - Montar contexto com dados do lead em vez do evento
+  - Financeiro simplificado: valor_evento e preço por pessoa estimado
+- Manter compatibilidade com `evento_id` existente
 
-2. Adicionar `itens_inclusos` ao objeto `context`:
-```typescript
-const context = {
-  evento: { ... },
-  financeiro: { ... },
-  cardapio: itensCardapio,
-  equipe: membrosEquipe,
-  itens_inclusos: itensInclusos,
-};
-```
+#### 4. Atualizar formulário de criação de Lead
+**Arquivo:** `src/pages/Leads.tsx`
 
-3. Atualizar a descrição do campo `servicos` no tool schema para instruir a IA a incorporar esses itens:
-```
-"Serviços inclusos: equipe, estrutura, atendimento. OBRIGATÓRIO: incluir todos os itens da lista 'itens_inclusos' do contexto (copos, pratos, talheres, rechaud, suqueiras, etc.) de forma organizada e valorizada"
-```
+Adicionar campos no dialog de criação:
+- Valor do Evento (input number)
+- Endereço (input text)
+- Cardápio (select com lista de cardápios)
 
-Nenhuma alteração no frontend necessária — a IA receberá os itens e os integrará naturalmente na seção de serviços.
+#### 5. Converter Lead → Evento com dados extras
+Ao converter, copiar também `valor_evento` → `valor_total`, `endereco` → `local`, e `cardapio_id` → criar registro em `evento_cardapio`.
+
+### Detalhes Técnicos
+
+- Migration SQL: `ALTER TABLE leads ADD COLUMN valor_evento numeric, ADD COLUMN endereco text, ADD COLUMN cardapio_id uuid;`
+- A edge function detecta se recebeu `lead_id` ou `evento_id` e monta o contexto adequado
+- LeadDetail usa queries para `leads`, `cardapios` (lista para select), e `cardapio_itens` (para exibir itens do cardápio vinculado)
+- Proposta tab no LeadDetail chama `supabase.functions.invoke("generate-proposta", { body: { lead_id, tom } })`
 
