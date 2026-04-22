@@ -1,55 +1,48 @@
 
 
-## Proposta Comercial Focada no Lead
+## Permitir Exclusão por Qualquer Usuário Autenticado
 
 ### Resumo
-Mover a geração de proposta do evento para o lead, adicionar campos novos ao lead (valor do evento, endereço, cardápio vinculado), criar uma página de detalhe do lead (`/leads/:id`), e adaptar a edge function para trabalhar com dados do lead.
+Atualmente, a exclusão (DELETE) em várias tabelas está restrita ao papel `admin` via RLS. O usuário quer que qualquer usuário autenticado possa excluir registros em todos os módulos. Os recálculos automáticos já existem via triggers (custos → caixa, pagamentos → caixa, etc.) e continuarão funcionando normalmente, pois as funções `get_*` calculam tudo on-the-fly via SQL.
+
+### Tabelas afetadas (DELETE hoje restrito a admin)
+- `caixa_movimentacoes` (`caixa_delete_admin`)
+- `cardapios` (`cardapios_delete_admin`)
+- `custos_evento` (`custos_delete_admin`)
+- `equipe` (`equipe_delete_admin`)
+- `eventos` (`eventos_delete_admin`)
+- `faturamento_evento` (`faturamento_delete_admin`)
+- `leads` (`leads_delete_admin`)
+- `pagamentos_evento` (`Pagamentos delete admin only`)
+- `parcelas_pagamento` (`Parcelas delete admin only`)
+- `user_roles` (`user_roles_delete_admin`) — **manter restrito ao admin** por segurança (gestão de papéis)
 
 ### Alterações
 
-#### 1. Migration: Adicionar colunas à tabela `leads`
-- `valor_evento` (numeric, nullable) — valor estimado do evento
-- `endereco` (text, nullable) — endereço do evento
-- `cardapio_id` (uuid, nullable) — referência ao cardápio vinculado
+#### 1. Migration: substituir políticas DELETE
+Para cada tabela acima (exceto `user_roles`), dropar a política atual e criar nova permitindo DELETE para qualquer `authenticated`:
 
-#### 2. Nova rota `/leads/:id` — Página de detalhe do Lead
-**Arquivo:** `src/pages/LeadDetail.tsx` (novo)
+```sql
+DROP POLICY "caixa_delete_admin" ON caixa_movimentacoes;
+CREATE POLICY "caixa_delete" ON caixa_movimentacoes
+  FOR DELETE TO authenticated USING (true);
+-- (repetir para as demais tabelas)
+```
 
-Página com:
-- Informações do lead (nome, telefone, email, tipo evento, data, convidados, valor, endereço, observações) — editáveis inline
-- Seletor de cardápio (select com cardápios disponíveis)
-- Aba/seção "Proposta com IA" — mesma UI que existe hoje no EventoDetail (tom selector, gerar, regenerar, editar, copiar)
+#### 2. Também liberar INSERT/UPDATE em `leads`
+A tabela `leads` hoje exige admin para INSERT e UPDATE (`leads_insert_admin`, `leads_update_admin`), o que é inconsistente com a abertura. Liberar para `authenticated` também, para não quebrar o fluxo de criação/edição de leads pelo usuário comum.
 
-**Arquivo:** `src/App.tsx` — adicionar rota `/leads/:id` 
-
-**Arquivo:** `src/pages/Leads.tsx` — cada linha da tabela clicável (navegar para `/leads/:id`)
-
-#### 3. Adaptar Edge Function `generate-proposta`
-**Arquivo:** `supabase/functions/generate-proposta/index.ts`
-
-- Aceitar `lead_id` como alternativa a `evento_id`
-- Quando `lead_id` for passado:
-  - Buscar dados do lead (nome, tipo_evento, data_prevista, numero_convidados, valor_evento, endereco, observacoes)
-  - Buscar cardápio vinculado via `cardapio_id` → `cardapios` + `cardapio_itens`
-  - Montar contexto com dados do lead em vez do evento
-  - Financeiro simplificado: valor_evento e preço por pessoa estimado
-- Manter compatibilidade com `evento_id` existente
-
-#### 4. Atualizar formulário de criação de Lead
-**Arquivo:** `src/pages/Leads.tsx`
-
-Adicionar campos no dialog de criação:
-- Valor do Evento (input number)
-- Endereço (input text)
-- Cardápio (select com lista de cardápios)
-
-#### 5. Converter Lead → Evento com dados extras
-Ao converter, copiar também `valor_evento` → `valor_total`, `endereco` → `local`, e `cardapio_id` → criar registro em `evento_cardapio`.
+#### 3. Recálculos automáticos
+Nada a fazer no código:
+- Excluir um `pagamentos_evento` → trigger `fn_pagamento_deletado_caixa` já remove a entrada do caixa
+- Excluir uma `parcelas_pagamento` → trigger `fn_parcela_deletada_caixa` já remove a entrada do caixa
+- Excluir um `custos_evento` → afeta diretamente os cálculos das funções `get_dashboard_executivo`, `get_financeiro_mensal`, etc., que recalculam on-the-fly
+- Excluir um `eventos` → cascade já remove dependências (custos, pagamentos, parcelas, equipe, cardápio)
+- Dashboards usam React Query com `invalidateQueries` após mutações, então recarregam automaticamente
 
 ### Detalhes Técnicos
-
-- Migration SQL: `ALTER TABLE leads ADD COLUMN valor_evento numeric, ADD COLUMN endereco text, ADD COLUMN cardapio_id uuid;`
-- A edge function detecta se recebeu `lead_id` ou `evento_id` e monta o contexto adequado
-- LeadDetail usa queries para `leads`, `cardapios` (lista para select), e `cardapio_itens` (para exibir itens do cardápio vinculado)
-- Proposta tab no LeadDetail chama `supabase.functions.invoke("generate-proposta", { body: { lead_id, tom } })`
+- Apenas uma migration SQL com `DROP POLICY` + `CREATE POLICY`
+- `user_roles` **permanece** restrito a admin (segurança crítica de RBAC)
+- `profiles` continua sem DELETE (gerenciado via edge function `admin-manage-users`)
+- Nenhuma alteração no frontend necessária — os botões de exclusão já existem via `DeleteConfirmDialog`
 
