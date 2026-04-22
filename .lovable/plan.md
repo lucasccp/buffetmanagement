@@ -1,48 +1,59 @@
 
 
-## Permitir Exclusão por Qualquer Usuário Autenticado
+## Bug: Movimentações manuais do caixa não somam ao saldo
 
-### Resumo
-Atualmente, a exclusão (DELETE) em várias tabelas está restrita ao papel `admin` via RLS. O usuário quer que qualquer usuário autenticado possa excluir registros em todos os módulos. Os recálculos automáticos já existem via triggers (custos → caixa, pagamentos → caixa, etc.) e continuarão funcionando normalmente, pois as funções `get_*` calculam tudo on-the-fly via SQL.
+### Diagnóstico
+A função SQL `get_caixa_metrics` (que alimenta os KPIs do dashboard de Caixa) calcula entradas/saídas a partir de `parcelas_pagamento` e `custos_evento` — **ignora completamente a tabela `caixa_movimentacoes`**.
 
-### Tabelas afetadas (DELETE hoje restrito a admin)
-- `caixa_movimentacoes` (`caixa_delete_admin`)
-- `cardapios` (`cardapios_delete_admin`)
-- `custos_evento` (`custos_delete_admin`)
-- `equipe` (`equipe_delete_admin`)
-- `eventos` (`eventos_delete_admin`)
-- `faturamento_evento` (`faturamento_delete_admin`)
-- `leads` (`leads_delete_admin`)
-- `pagamentos_evento` (`Pagamentos delete admin only`)
-- `parcelas_pagamento` (`Parcelas delete admin only`)
-- `user_roles` (`user_roles_delete_admin`) — **manter restrito ao admin** por segurança (gestão de papéis)
+Consequência: ao registrar uma movimentação manual (ex: "Em caixa" R$ 3.784,22), ela aparece na tabela de Movimentações mas **não impacta** Saldo Atual, Saldo Futuro, Entradas nem Saídas.
 
-### Alterações
+Os gráficos (`get_caixa_fluxo_mensal`, `get_caixa_saldo_acumulado`) já leem de `caixa_movimentacoes` corretamente — só os KPIs estão errados.
 
-#### 1. Migration: substituir políticas DELETE
-Para cada tabela acima (exceto `user_roles`), dropar a política atual e criar nova permitindo DELETE para qualquer `authenticated`:
+### Correção
+Reescrever a função `get_caixa_metrics` para usar `caixa_movimentacoes` como fonte única de verdade (já que pagamentos e custos automaticamente geram registros lá via triggers). Adicionar entradas previstas vindas de `parcelas_pagamento` pendentes para o cálculo do saldo futuro.
 
+### Migration
 ```sql
-DROP POLICY "caixa_delete_admin" ON caixa_movimentacoes;
-CREATE POLICY "caixa_delete" ON caixa_movimentacoes
-  FOR DELETE TO authenticated USING (true);
--- (repetir para as demais tabelas)
+CREATE OR REPLACE FUNCTION public.get_caixa_metrics(
+  p_data_inicio date DEFAULT NULL,
+  p_data_fim date DEFAULT NULL
+)
+RETURNS TABLE(
+  entradas_realizadas numeric,
+  entradas_previstas numeric,
+  saidas numeric,
+  saldo_atual numeric,
+  saldo_futuro numeric
+)
+LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public
+AS $$
+  WITH mov AS (
+    SELECT
+      COALESCE(SUM(CASE WHEN tipo='entrada' THEN valor ELSE 0 END), 0) AS entradas,
+      COALESCE(SUM(CASE WHEN tipo='saida' THEN valor ELSE 0 END), 0) AS saidas
+    FROM caixa_movimentacoes
+    WHERE (p_data_inicio IS NULL OR data >= p_data_inicio)
+      AND (p_data_fim IS NULL OR data <= p_data_fim)
+  ),
+  prev AS (
+    SELECT COALESCE(SUM(valor), 0) AS v
+    FROM parcelas_pagamento
+    WHERE status IN ('pendente','atrasado')
+      AND (p_data_inicio IS NULL OR data_vencimento >= p_data_inicio)
+      AND (p_data_fim IS NULL OR data_vencimento <= p_data_fim)
+  )
+  SELECT
+    mov.entradas,
+    prev.v,
+    mov.saidas,
+    mov.entradas - mov.saidas,
+    (mov.entradas + prev.v) - mov.saidas
+  FROM mov, prev;
+$$;
 ```
 
-#### 2. Também liberar INSERT/UPDATE em `leads`
-A tabela `leads` hoje exige admin para INSERT e UPDATE (`leads_insert_admin`, `leads_update_admin`), o que é inconsistente com a abertura. Liberar para `authenticated` também, para não quebrar o fluxo de criação/edição de leads pelo usuário comum.
-
-#### 3. Recálculos automáticos
-Nada a fazer no código:
-- Excluir um `pagamentos_evento` → trigger `fn_pagamento_deletado_caixa` já remove a entrada do caixa
-- Excluir uma `parcelas_pagamento` → trigger `fn_parcela_deletada_caixa` já remove a entrada do caixa
-- Excluir um `custos_evento` → afeta diretamente os cálculos das funções `get_dashboard_executivo`, `get_financeiro_mensal`, etc., que recalculam on-the-fly
-- Excluir um `eventos` → cascade já remove dependências (custos, pagamentos, parcelas, equipe, cardápio)
-- Dashboards usam React Query com `invalidateQueries` após mutações, então recarregam automaticamente
-
 ### Detalhes Técnicos
-- Apenas uma migration SQL com `DROP POLICY` + `CREATE POLICY`
-- `user_roles` **permanece** restrito a admin (segurança crítica de RBAC)
-- `profiles` continua sem DELETE (gerenciado via edge function `admin-manage-users`)
-- Nenhuma alteração no frontend necessária — os botões de exclusão já existem via `DeleteConfirmDialog`
+- Nenhuma alteração no frontend — `Caixa.tsx` já consome o RPC e o React Query revalida ao criar/excluir
+- Triggers existentes (`fn_pagamento_pago_caixa`, `fn_custo_evento_caixa`) continuam alimentando `caixa_movimentacoes` automaticamente, então não há dupla contagem
+- `entradas_previstas` continua vindo de parcelas pendentes (movimentações manuais não têm conceito de "previsto")
 
