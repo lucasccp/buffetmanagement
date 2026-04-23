@@ -16,7 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useState } from "react";
-import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels } from "@/lib/formatters";
+import { formatCurrency, formatDate, eventoStatusLabels, custoCategLabels, pagamentoEventoStatusLabels, metodoPagamentoLabels, dateToISOString } from "@/lib/formatters";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Sparkles, Copy, RefreshCw, FileText } from "lucide-react";
 import { Plus, Pencil, CheckCircle, AlertTriangle, Clock } from "lucide-react";
@@ -606,7 +606,7 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
     mutationFn: async ({ id, newStatus }: { id: string; newStatus: "planejado" | "pago" }) => {
       const updateData: any = { status: newStatus };
       if (newStatus === "pago" && !pagamentos.find(p => p.id === id)?.data_pagamento) {
-        updateData.data_pagamento = new Date().toISOString().split("T")[0];
+        updateData.data_pagamento = dateToISOString(new Date());
       }
       const { error } = await supabase.from("pagamentos_evento").update(updateData).eq("id", id);
       if (error) throw error;
@@ -651,7 +651,7 @@ function PagamentosTab({ eventoId, evento, isAdmin }: { eventoId: string; evento
     mutationFn: async (parcelaId: string) => {
       const { error } = await supabase
         .from("parcelas_pagamento")
-        .update({ status: "pago" as any, data_pagamento: new Date().toISOString().split("T")[0] })
+        .update({ status: "pago" as any, data_pagamento: dateToISOString(new Date()) })
         .eq("id", parcelaId);
       if (error) throw error;
     },
