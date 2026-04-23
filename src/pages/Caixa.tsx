@@ -15,7 +15,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { toast } from "sonner";
 import { Plus, ExternalLink, ArrowUpCircle, ArrowDownCircle, Wallet, CalendarIcon, X, Filter, TrendingUp } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
-import { formatCurrency, formatDate } from "@/lib/formatters";
+import { formatCurrency, formatDate, dateToISOString } from "@/lib/formatters";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -72,7 +72,7 @@ export default function Caixa() {
   const [tipo, setTipo] = useState<"entrada" | "saida">("entrada");
   const [descricao, setDescricao] = useState("");
   const [valor, setValor] = useState("");
-  const [data, setData] = useState(new Date().toISOString().split("T")[0]);
+  const [data, setData] = useState(dateToISOString(new Date()));
   const [eventoId, setEventoId] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -191,7 +191,7 @@ export default function Caixa() {
     },
   });
 
-  const resetForm = () => { setTipo("entrada"); setDescricao(""); setValor(""); setData(new Date().toISOString().split("T")[0]); setEventoId(""); setFile(null); };
+  const resetForm = () => { setTipo("entrada"); setDescricao(""); setValor(""); setData(dateToISOString(new Date())); setEventoId(""); setFile(null); };
 
   const cm = caixaMetrics as any;
   const saldoAtual = Number(cm?.saldo_atual ?? 0);

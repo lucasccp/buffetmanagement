@@ -2,9 +2,21 @@ export function formatCurrency(value: number | null | undefined): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value ?? 0);
 }
 
-export function formatDate(date: string | null | undefined): string {
+export function formatDate(date: string | Date | null | undefined): string {
   if (!date) return "—";
-  return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
+  if (typeof date === "string") {
+    const m = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+    return new Intl.DateTimeFormat("pt-BR").format(new Date(date));
+  }
+  return new Intl.DateTimeFormat("pt-BR").format(date);
+}
+
+export function dateToISOString(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
 }
 
 export const leadStatusLabels: Record<string, string> = {
