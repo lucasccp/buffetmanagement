@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
@@ -69,6 +70,7 @@ function EmptyChart({ height = 240 }: { height?: number }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [dataInicio, setDataInicio] = useState<Date | undefined>();
   const [dataFim, setDataFim] = useState<Date | undefined>();
   const [eventoId, setEventoId] = useState<string>("");
@@ -136,10 +138,10 @@ export default function Dashboard() {
   const clearFilters = () => { setDataInicio(undefined); setDataFim(undefined); setEventoId(""); setTipoEvento(""); };
 
   const kpis = [
-    { label: "Faturamento", value: formatCurrency(faturamento), icon: DollarSign, accent: "text-success", bg: "bg-success/5" },
-    { label: "Lucro", value: formatCurrency(lucro), icon: TrendingUp, accent: lucro >= 0 ? "text-success" : "text-destructive", bg: lucro >= 0 ? "bg-success/5" : "bg-destructive/5" },
-    { label: "Margem", value: `${margem}%`, icon: Percent, accent: "text-primary", bg: "bg-primary/5" },
-    { label: "Eventos", value: String(totalEventos), icon: CalendarDays, accent: "text-info", bg: "bg-info/5" },
+    { label: "Faturamento", value: formatCurrency(faturamento), icon: DollarSign, accent: "text-success", bg: "bg-success/5", to: "/financeiro", hint: "Ver detalhes financeiros" },
+    { label: "Lucro", value: formatCurrency(lucro), icon: TrendingUp, accent: lucro >= 0 ? "text-success" : "text-destructive", bg: lucro >= 0 ? "bg-success/5" : "bg-destructive/5", to: "/financeiro", hint: "Ver análise de lucro" },
+    { label: "Margem", value: `${margem}%`, icon: Percent, accent: "text-primary", bg: "bg-primary/5", to: "/financeiro", hint: "Ver margens por evento" },
+    { label: "Eventos", value: String(totalEventos), icon: CalendarDays, accent: "text-info", bg: "bg-info/5", to: "/eventos", hint: "Abrir lista de eventos" },
   ];
 
   const pieData = (statusData ?? []).map((s) => ({
@@ -192,17 +194,24 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {kpis.map((kpi) => (
-              <Card key={kpi.label} className="border-0 shadow-none">
-                <CardContent className="p-4">
+              <button
+                key={kpi.label}
+                type="button"
+                onClick={() => navigate(kpi.to)}
+                title={kpi.hint}
+                aria-label={`${kpi.label}: ${kpi.value}. ${kpi.hint}`}
+                className="group text-left rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
+              >
+                <div className="p-4">
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", kpi.bg)}>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110", kpi.bg)}>
                       <kpi.icon className={cn("h-4 w-4", kpi.accent)} />
                     </div>
                     <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{kpi.label}</span>
                   </div>
                   <div className="text-lg font-semibold tracking-tight">{kpi.value}</div>
-                </CardContent>
-              </Card>
+                </div>
+              </button>
             ))}
           </div>
         )}
