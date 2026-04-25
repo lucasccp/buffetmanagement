@@ -13,7 +13,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Eye } from "lucide-react";
+import { Plus, Eye, AlertTriangle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatDate, formatCurrency, eventoStatusLabels } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
@@ -40,6 +41,19 @@ export default function Eventos() {
     },
   });
 
+  const { data: custosPorEvento = {} } = useQuery({
+    queryKey: ["custos_por_evento"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("custos_evento").select("evento_id, valor");
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      for (const c of data ?? []) {
+        map[c.evento_id] = (map[c.evento_id] ?? 0) + Number(c.valor ?? 0);
+      }
+      return map;
+    },
+  });
+
   const createMut = useMutation({
     mutationFn: async (values: TablesInsert<"eventos">) => {
       const { error } = await supabase.from("eventos").insert(values);
@@ -47,6 +61,17 @@ export default function Eventos() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["eventos"] }); setOpen(false); setForm({}); toast.success("Evento criado!"); },
   });
+
+  function getInconsistencias(ev: typeof eventos[number]): string[] {
+    const issues: string[] = [];
+    if (!ev.data_evento) issues.push("Sem data definida");
+    if (!ev.valor_total || Number(ev.valor_total) <= 0) issues.push("Sem valor total");
+    const custo = custosPorEvento[ev.id] ?? 0;
+    if (custo > 0 && Number(ev.valor_total ?? 0) > 0 && custo > Number(ev.valor_total)) {
+      issues.push(`Custos (R$ ${custo.toFixed(2)}) excedem o faturamento`);
+    }
+    return issues;
+  }
 
   const deleteMut = useMutation({
     mutationFn: async (id: string) => {
