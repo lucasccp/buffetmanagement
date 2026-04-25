@@ -114,6 +114,17 @@ export default function Leads() {
     },
   });
 
+  const filtered = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return leads;
+    return leads.filter((l) =>
+      l.nome?.toLowerCase().includes(term) ||
+      l.email?.toLowerCase().includes(term) ||
+      l.telefone?.toLowerCase().includes(term) ||
+      l.tipo_evento?.toLowerCase().includes(term)
+    );
+  }, [leads, search]);
+
   return (
     <AppLayout>
       <div className="space-y-5">
