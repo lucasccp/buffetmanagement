@@ -70,6 +70,7 @@ function EmptyChart({ height = 240 }: { height?: number }) {
 }
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [dataInicio, setDataInicio] = useState<Date | undefined>();
   const [dataFim, setDataFim] = useState<Date | undefined>();
   const [eventoId, setEventoId] = useState<string>("");
