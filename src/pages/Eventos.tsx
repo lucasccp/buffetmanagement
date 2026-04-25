@@ -182,7 +182,8 @@ export default function Eventos() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))}
+                  );
+                })}
                 {eventos.length === 0 && (
                   <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-12 text-sm">Nenhum evento encontrado</TableCell></TableRow>
                 )}
