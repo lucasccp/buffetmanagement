@@ -14,6 +14,7 @@ import { cn } from "@/lib/utils";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import AppLayout from "@/components/AppLayout";
 import InsightsPanel from "@/components/InsightsPanel";
+import { KpiSkeleton } from "@/components/TableSkeleton";
 
 const COLORS = {
   faturamento: "hsl(152, 56%, 46%)",
