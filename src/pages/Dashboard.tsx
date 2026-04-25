@@ -194,17 +194,24 @@ export default function Dashboard() {
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
             {kpis.map((kpi) => (
-              <Card key={kpi.label} className="border-0 shadow-none">
-                <CardContent className="p-4">
+              <button
+                key={kpi.label}
+                type="button"
+                onClick={() => navigate(kpi.to)}
+                title={kpi.hint}
+                aria-label={`${kpi.label}: ${kpi.value}. ${kpi.hint}`}
+                className="group text-left rounded-lg border bg-card text-card-foreground shadow-sm hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 cursor-pointer"
+              >
+                <div className="p-4">
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", kpi.bg)}>
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110", kpi.bg)}>
                       <kpi.icon className={cn("h-4 w-4", kpi.accent)} />
                     </div>
                     <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{kpi.label}</span>
                   </div>
                   <div className="text-lg font-semibold tracking-tight">{kpi.value}</div>
-                </CardContent>
-              </Card>
+                </div>
+              </button>
             ))}
           </div>
         )}
