@@ -97,7 +97,7 @@ export default function Dashboard() {
     return Array.from(set).sort();
   }, [eventos]);
 
-  const { data: metrics } = useQuery({
+  const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["dashboard_executivo", filterArgs],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_dashboard_executivo" as any, filterArgs);
@@ -187,21 +187,25 @@ export default function Dashboard() {
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {kpis.map((kpi) => (
-            <Card key={kpi.label} className="border-0 shadow-none">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2.5 mb-3">
-                  <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", kpi.bg)}>
-                    <kpi.icon className={cn("h-4 w-4", kpi.accent)} />
+        {metricsLoading ? (
+          <KpiSkeleton count={4} />
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {kpis.map((kpi) => (
+              <Card key={kpi.label} className="border-0 shadow-none">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", kpi.bg)}>
+                      <kpi.icon className={cn("h-4 w-4", kpi.accent)} />
+                    </div>
+                    <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{kpi.label}</span>
                   </div>
-                  <span className="text-[11px] text-muted-foreground font-medium uppercase tracking-wider">{kpi.label}</span>
-                </div>
-                <div className="text-lg font-semibold tracking-tight">{kpi.value}</div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <div className="text-lg font-semibold tracking-tight">{kpi.value}</div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Faturamento Chart */}
         <Card className="border-0 shadow-none">
