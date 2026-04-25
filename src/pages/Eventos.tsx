@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { TablesInsert, Enums } from "@/integrations/supabase/types";
@@ -13,11 +13,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Eye, AlertTriangle } from "lucide-react";
+import { Plus, Eye, AlertTriangle, Search, ArrowUpDown, CalendarDays } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatDate, formatCurrency, eventoStatusLabels } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
+import { TableSkeleton } from "@/components/TableSkeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 const statusColors: Record<string, string> = {
   planejado: "bg-info/10 text-info border-info/20",
@@ -26,13 +28,19 @@ const statusColors: Record<string, string> = {
   cancelado: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+type SortKey = "nome_evento" | "data_evento" | "valor_total" | "status";
+type SortDir = "asc" | "desc";
+
 export default function Eventos() {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Partial<TablesInsert<"eventos">>>({});
+  const [search, setSearch] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("data_evento");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const { data: eventos = [] } = useQuery({
+  const { data: eventos = [], isLoading } = useQuery({
     queryKey: ["eventos"],
     queryFn: async () => {
       const { data, error } = await supabase.from("eventos").select("*").order("created_at", { ascending: false });
