@@ -138,10 +138,10 @@ export default function Dashboard() {
   const clearFilters = () => { setDataInicio(undefined); setDataFim(undefined); setEventoId(""); setTipoEvento(""); };
 
   const kpis = [
-    { label: "Faturamento", value: formatCurrency(faturamento), icon: DollarSign, accent: "text-success", bg: "bg-success/5" },
-    { label: "Lucro", value: formatCurrency(lucro), icon: TrendingUp, accent: lucro >= 0 ? "text-success" : "text-destructive", bg: lucro >= 0 ? "bg-success/5" : "bg-destructive/5" },
-    { label: "Margem", value: `${margem}%`, icon: Percent, accent: "text-primary", bg: "bg-primary/5" },
-    { label: "Eventos", value: String(totalEventos), icon: CalendarDays, accent: "text-info", bg: "bg-info/5" },
+    { label: "Faturamento", value: formatCurrency(faturamento), icon: DollarSign, accent: "text-success", bg: "bg-success/5", to: "/financeiro", hint: "Ver detalhes financeiros" },
+    { label: "Lucro", value: formatCurrency(lucro), icon: TrendingUp, accent: lucro >= 0 ? "text-success" : "text-destructive", bg: lucro >= 0 ? "bg-success/5" : "bg-destructive/5", to: "/financeiro", hint: "Ver análise de lucro" },
+    { label: "Margem", value: `${margem}%`, icon: Percent, accent: "text-primary", bg: "bg-primary/5", to: "/financeiro", hint: "Ver margens por evento" },
+    { label: "Eventos", value: String(totalEventos), icon: CalendarDays, accent: "text-info", bg: "bg-info/5", to: "/eventos", hint: "Abrir lista de eventos" },
   ];
 
   const pieData = (statusData ?? []).map((s) => ({
