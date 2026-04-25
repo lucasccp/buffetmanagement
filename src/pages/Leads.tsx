@@ -170,6 +170,21 @@ export default function Leads() {
           </Dialog>
         </div>
 
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, telefone, email ou tipo..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-9 text-sm"
+            />
+          </div>
+          {search && (
+            <span className="text-xs text-muted-foreground">{filtered.length} de {leads.length}</span>
+          )}
+        </div>
+
         <div className="rounded-lg border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
@@ -185,37 +200,56 @@ export default function Leads() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {leads.map((lead) => (
-                  <TableRow key={lead.id} className="cursor-pointer" onClick={() => navigate(`/leads/${lead.id}`)}>
-                    <TableCell className="font-medium text-sm">{lead.nome}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{lead.telefone ?? "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{lead.tipo_evento ?? "—"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(lead.data_prevista)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">{lead.numero_convidados ?? "—"}</TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <Select value={lead.status} onValueChange={(v) => updateStatus.mutate({ id: lead.id, status: v as Enums<"lead_status"> })}>
-                        <SelectTrigger className="w-[120px] h-7 text-xs border-0 p-0">
-                          <Badge variant="outline" className={statusColors[lead.status]}>{leadStatusLabels[lead.status]}</Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Constants.public.Enums.lead_status.map((s) => (
-                            <SelectItem key={s} value={s}>{leadStatusLabels[s]}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </TableCell>
-                    <TableCell onClick={(e) => e.stopPropagation()}>
-                      <div className="flex gap-0.5">
-                        <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </Button>
-                        <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(lead.id)} title="Excluir lead" description={`Tem certeza que deseja excluir "${lead.nome}"? Esta ação não pode ser desfeita.`} />
-                      </div>
+                {isLoading ? (
+                  <TableSkeleton rows={5} cols={7} />
+                ) : filtered.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      {leads.length === 0 ? (
+                        <EmptyState
+                          icon={Users}
+                          title="Nenhum lead ainda"
+                          description="Cadastre seu primeiro lead para acompanhar oportunidades de venda."
+                          actionLabel="Cadastrar primeiro lead"
+                          onAction={() => setOpen(true)}
+                        />
+                      ) : (
+                        <div className="text-center text-muted-foreground py-12 text-sm">
+                          Nenhum lead encontrado para "{search}"
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
-                ))}
-                {leads.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-12 text-sm">Nenhum lead encontrado</TableCell></TableRow>
+                ) : (
+                  filtered.map((lead) => (
+                    <TableRow key={lead.id} className="cursor-pointer" onClick={() => navigate(`/leads/${lead.id}`)}>
+                      <TableCell className="font-medium text-sm">{lead.nome}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{lead.telefone ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{lead.tipo_evento ?? "—"}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(lead.data_prevista)}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">{lead.numero_convidados ?? "—"}</TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <Select value={lead.status} onValueChange={(v) => updateStatus.mutate({ id: lead.id, status: v as Enums<"lead_status"> })}>
+                          <SelectTrigger className="w-[120px] h-7 text-xs border-0 p-0">
+                            <Badge variant="outline" className={statusColors[lead.status]}>{leadStatusLabels[lead.status]}</Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Constants.public.Enums.lead_status.map((s) => (
+                              <SelectItem key={s} value={s}>{leadStatusLabels[s]}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <div className="flex gap-0.5">
+                          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => convertToEvento.mutate(lead)} disabled={lead.status === "fechado" || lead.status === "perdido"}>
+                            <ArrowRight className="h-3.5 w-3.5" />
+                          </Button>
+                          <DeleteConfirmDialog onConfirm={() => deleteMut.mutate(lead.id)} title="Excluir lead" description={`Tem certeza que deseja excluir "${lead.nome}"? Esta ação não pode ser desfeita.`} />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
                 )}
               </TableBody>
             </Table>
