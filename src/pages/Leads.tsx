@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Tables, TablesInsert, Enums } from "@/integrations/supabase/types";
@@ -13,10 +13,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, ArrowRight } from "lucide-react";
+import { Plus, ArrowRight, Search, Users } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatDate, formatCurrency, leadStatusLabels } from "@/lib/formatters";
 import { useNavigate } from "react-router-dom";
+import { TableSkeleton } from "@/components/TableSkeleton";
+import { EmptyState } from "@/components/EmptyState";
 
 const statusColors: Record<string, string> = {
   novo: "bg-info/10 text-info border-info/20",
@@ -31,8 +33,9 @@ export default function Leads() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<Record<string, any>>({});
+  const [search, setSearch] = useState("");
 
-  const { data: leads = [] } = useQuery({
+  const { data: leads = [], isLoading } = useQuery({
     queryKey: ["leads"],
     queryFn: async () => {
       const { data, error } = await supabase.from("leads").select("*").order("created_at", { ascending: false });
