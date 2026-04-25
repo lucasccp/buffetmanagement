@@ -92,11 +92,20 @@ export default function Eventos() {
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader><DialogTitle>Novo Evento</DialogTitle></DialogHeader>
-              <form onSubmit={(e) => { e.preventDefault(); if (form.nome_evento) createMut.mutate(form as TablesInsert<"eventos">); }} className="space-y-3">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                if (!form.nome_evento) return;
+                if (!form.data_evento) { toast.error("A data do evento é obrigatória."); return; }
+                if (form.status === "confirmado" && (!form.valor_total || Number(form.valor_total) <= 0)) {
+                  toast.error("Para confirmar o evento, informe um valor total maior que zero.");
+                  return;
+                }
+                createMut.mutate(form as TablesInsert<"eventos">);
+              }} className="space-y-3">
                 <div><Label className="text-xs">Nome do Evento *</Label><Input value={form.nome_evento ?? ""} onChange={(e) => setForm({ ...form, nome_evento: e.target.value })} required className="mt-1" /></div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label className="text-xs">Tipo</Label><Input value={form.tipo_evento ?? ""} onChange={(e) => setForm({ ...form, tipo_evento: e.target.value })} className="mt-1" /></div>
-                  <div><Label className="text-xs">Data</Label><Input type="date" value={form.data_evento ?? ""} onChange={(e) => setForm({ ...form, data_evento: e.target.value })} className="mt-1" /></div>
+                  <div><Label className="text-xs">Data *</Label><Input type="date" required value={form.data_evento ?? ""} onChange={(e) => setForm({ ...form, data_evento: e.target.value })} className="mt-1" /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div><Label className="text-xs">Horário Início</Label><Input type="time" value={form.horario_inicio ?? ""} onChange={(e) => setForm({ ...form, horario_inicio: e.target.value })} className="mt-1" /></div>
@@ -140,9 +149,27 @@ export default function Eventos() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {eventos.map((ev) => (
+                {eventos.map((ev) => {
+                  const issues = getInconsistencias(ev);
+                  return (
                   <TableRow key={ev.id} className="cursor-pointer" onClick={() => navigate(`/eventos/${ev.id}`)}>
-                    <TableCell className="font-medium text-sm">{ev.nome_evento}</TableCell>
+                    <TableCell className="font-medium text-sm">
+                      <div className="flex items-center gap-1.5">
+                        {issues.length > 0 && (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <AlertTriangle className="h-3.5 w-3.5 text-warning shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <ul className="text-xs list-disc pl-4">
+                                {issues.map((i, idx) => <li key={idx}>{i}</li>)}
+                              </ul>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
+                        <span>{ev.nome_evento}</span>
+                      </div>
+                    </TableCell>
                     <TableCell className="text-sm text-muted-foreground">{formatDate(ev.data_evento)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{ev.numero_convidados ?? "—"}</TableCell>
                     <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{ev.local ?? "—"}</TableCell>
