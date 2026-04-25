@@ -89,6 +89,42 @@ export default function Eventos() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["eventos"] }); toast.success("Evento removido!"); },
   });
 
+  function toggleSort(key: SortKey) {
+    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  }
+
+  const filteredSorted = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    let list = eventos.filter((e) => {
+      if (!term) return true;
+      return (
+        e.nome_evento?.toLowerCase().includes(term) ||
+        e.local?.toLowerCase().includes(term) ||
+        e.tipo_evento?.toLowerCase().includes(term)
+      );
+    });
+    list = [...list].sort((a, b) => {
+      const av = a[sortKey] ?? "";
+      const bv = b[sortKey] ?? "";
+      if (av < bv) return sortDir === "asc" ? -1 : 1;
+      if (av > bv) return sortDir === "asc" ? 1 : -1;
+      return 0;
+    });
+    return list;
+  }, [eventos, search, sortKey, sortDir]);
+
+  function SortHeader({ k, children, className = "" }: { k: SortKey; children: React.ReactNode; className?: string }) {
+    return (
+      <TableHead className={`text-xs ${className}`}>
+        <button onClick={() => toggleSort(k)} className="inline-flex items-center gap-1 hover:text-foreground transition-colors">
+          {children}
+          <ArrowUpDown className={`h-3 w-3 ${sortKey === k ? "text-foreground" : "text-muted-foreground/40"}`} />
+        </button>
+      </TableHead>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="space-y-5">
@@ -142,22 +178,58 @@ export default function Eventos() {
           </Dialog>
         </div>
 
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por nome, local ou tipo..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8 h-9 text-sm"
+            />
+          </div>
+          {search && (
+            <span className="text-xs text-muted-foreground">{filteredSorted.length} de {eventos.length}</span>
+          )}
+        </div>
+
         <div className="rounded-lg border bg-card overflow-hidden">
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="text-xs">Nome</TableHead>
-                  <TableHead className="text-xs">Data</TableHead>
+                  <SortHeader k="nome_evento">Nome</SortHeader>
+                  <SortHeader k="data_evento">Data</SortHeader>
                   <TableHead className="text-xs hidden md:table-cell">Convidados</TableHead>
                   <TableHead className="text-xs hidden md:table-cell">Local</TableHead>
-                  <TableHead className="text-xs">Valor</TableHead>
-                  <TableHead className="text-xs">Status</TableHead>
+                  <SortHeader k="valor_total">Valor</SortHeader>
+                  <SortHeader k="status">Status</SortHeader>
                   <TableHead className="text-xs w-[50px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {eventos.map((ev) => {
+                {isLoading ? (
+                  <TableSkeleton rows={5} cols={7} />
+                ) : filteredSorted.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7}>
+                      {eventos.length === 0 ? (
+                        <EmptyState
+                          icon={CalendarDays}
+                          title="Nenhum evento ainda"
+                          description="Crie seu primeiro evento para começar a gerenciar seu buffet."
+                          actionLabel="Criar primeiro evento"
+                          onAction={() => setOpen(true)}
+                        />
+                      ) : (
+                        <div className="text-center text-muted-foreground py-12 text-sm">
+                          Nenhum evento encontrado para "{search}"
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredSorted.map((ev) => {
                   const issues = getInconsistencias(ev);
                   return (
                   <TableRow key={ev.id} className="cursor-pointer" onClick={() => navigate(`/eventos/${ev.id}`)}>
@@ -191,9 +263,7 @@ export default function Eventos() {
                     </TableCell>
                   </TableRow>
                   );
-                })}
-                {eventos.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-12 text-sm">Nenhum evento encontrado</TableCell></TableRow>
+                })
                 )}
               </TableBody>
             </Table>
