@@ -1,110 +1,57 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Calendar, UtensilsCrossed, UsersRound, Wallet, Menu, X, Moon, Sun, LogOut, ShieldCheck, CreditCard } from "lucide-react";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
+import { useLocation } from "react-router-dom";
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/hooks/use-theme";
-import { useAuth } from "@/hooks/use-auth";
-import { useRole } from "@/hooks/use-role";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import AppSidebar from "@/components/AppSidebar";
 
-const baseNavItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/leads", label: "Leads", icon: Users },
-  { to: "/eventos", label: "Eventos", icon: CalendarDays },
-  { to: "/equipe", label: "Equipe", icon: UsersRound },
-  { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed },
-  { to: "/caixa", label: "Caixa", icon: Wallet },
-  { to: "/financeiro", label: "Financeiro", icon: CreditCard },
-  { to: "/calendario", label: "Calendário", icon: Calendar },
-];
+const pageTitles: Record<string, string> = {
+  "/dashboard": "Dashboard",
+  "/leads": "Leads",
+  "/eventos": "Eventos",
+  "/equipe": "Equipe",
+  "/cardapio": "Cardápio",
+  "/caixa": "Caixa",
+  "/financeiro": "Financeiro",
+  "/calendario": "Calendário",
+  "/usuarios": "Usuários",
+};
+
+function getPageTitle(pathname: string): string {
+  // Match longest prefix
+  const matches = Object.keys(pageTitles)
+    .filter((k) => pathname === k || pathname.startsWith(k + "/"))
+    .sort((a, b) => b.length - a.length);
+  return matches[0] ? pageTitles[matches[0]] : "BuffetPro";
+}
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
-  const { signOut } = useAuth();
-  const { isAdmin } = useRole();
-  const navigate = useNavigate();
-
-  const navItems = [
-    ...baseNavItems,
-    ...(isAdmin ? [{ to: "/usuarios", label: "Usuários", icon: ShieldCheck }] : []),
-  ];
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate("/login");
-  };
+  const location = useLocation();
+  const title = getPageTitle(location.pathname);
 
   return (
-    <div className="flex min-h-screen">
-      {/* Mobile overlay */}
-      {mobileOpen && (
-        <div className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40 lg:hidden" onClick={() => setMobileOpen(false)} />
-      )}
-
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-50 w-60 bg-sidebar flex flex-col transition-transform duration-200 lg:relative lg:translate-x-0",
-        mobileOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <div className="flex items-center justify-between px-5 h-16">
-          <span className="text-base font-semibold text-sidebar-primary tracking-tight">BuffetPro</span>
-          <button className="lg:hidden text-sidebar-foreground" onClick={() => setMobileOpen(false)}>
-            <X className="h-5 w-5" />
-          </button>
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AppSidebar />
+        <div className="flex-1 flex flex-col min-w-0">
+          <header className="h-14 flex items-center px-4 lg:px-6 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-30 gap-3">
+            <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+            <h2 className="text-sm font-semibold text-foreground truncate">{title}</h2>
+            <div className="ml-auto">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
+                aria-label="Alternar tema"
+              >
+                {theme === "dark" ? <Sun className="h-4 w-4 text-muted-foreground" /> : <Moon className="h-4 w-4 text-muted-foreground" />}
+              </button>
+            </div>
+          </header>
+          <main className="flex-1 p-4 lg:p-6 overflow-auto animate-fade-in">
+            {children}
+          </main>
         </div>
-        <nav className="flex-1 px-3 space-y-0.5 mt-2 overflow-y-auto">
-          {navItems.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              onClick={() => setMobileOpen(false)}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all duration-150",
-                  isActive
-                    ? "bg-sidebar-accent text-sidebar-primary"
-                    : "text-sidebar-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
-                )
-              }
-            >
-              <item.icon className="h-4 w-4 shrink-0" />
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <div className="px-5 py-4 border-t border-sidebar-border flex items-center justify-between">
-          <p className="text-[11px] text-sidebar-foreground/50">© 2026 BuffetPro</p>
-          <button
-            onClick={handleLogout}
-            className="p-1.5 rounded-md hover:bg-sidebar-accent/60 text-sidebar-foreground/50 hover:text-sidebar-foreground transition-colors"
-            title="Sair"
-          >
-            <LogOut className="h-4 w-4" />
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-14 flex items-center px-4 lg:px-6 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-30">
-          <button className="lg:hidden mr-3 p-1.5 rounded-md hover:bg-muted" onClick={() => setMobileOpen(true)}>
-            <Menu className="h-5 w-5 text-muted-foreground" />
-          </button>
-          <div className="lg:hidden text-sm font-semibold text-foreground">BuffetPro</div>
-          <div className="ml-auto">
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-lg hover:bg-muted transition-colors"
-              aria-label="Alternar tema"
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4 text-muted-foreground" /> : <Moon className="h-4 w-4 text-muted-foreground" />}
-            </button>
-          </div>
-        </header>
-        <main className="flex-1 p-4 lg:p-6 overflow-auto animate-fade-in">
-          {children}
-        </main>
       </div>
-    </div>
+    </SidebarProvider>
   );
 }
