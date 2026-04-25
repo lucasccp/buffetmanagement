@@ -118,6 +118,16 @@ export default function EventoDetail() {
 function GeralTab({ evento, onUpdate }: { evento: any; onUpdate: (v: any) => void }) {
   const [form, setForm] = useState(evento);
   const handleSave = () => {
+    if (!form.data_evento) {
+      toast.error("A data do evento é obrigatória.");
+      return;
+    }
+    if (form.status === "confirmado") {
+      if (!form.valor_total || Number(form.valor_total) <= 0) {
+        toast.error("Para confirmar o evento, informe um valor total maior que zero.");
+        return;
+      }
+    }
     onUpdate({
       nome_evento: form.nome_evento, tipo_evento: form.tipo_evento, data_evento: form.data_evento,
       horario_inicio: form.horario_inicio, horario_fim: form.horario_fim, numero_convidados: form.numero_convidados,
@@ -131,7 +141,7 @@ function GeralTab({ evento, onUpdate }: { evento: any; onUpdate: (v: any) => voi
         <div><Label className="text-xs">Nome do Evento</Label><Input value={form.nome_evento} onChange={(e) => setForm({ ...form, nome_evento: e.target.value })} className="mt-1" /></div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label className="text-xs">Tipo</Label><Input value={form.tipo_evento ?? ""} onChange={(e) => setForm({ ...form, tipo_evento: e.target.value })} className="mt-1" /></div>
-          <div><Label className="text-xs">Data</Label><Input type="date" value={form.data_evento ?? ""} onChange={(e) => setForm({ ...form, data_evento: e.target.value })} className="mt-1" /></div>
+          <div><Label className="text-xs">Data *</Label><Input type="date" required value={form.data_evento ?? ""} onChange={(e) => setForm({ ...form, data_evento: e.target.value })} className="mt-1" /></div>
         </div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label className="text-xs">Horário Início</Label><Input type="time" value={form.horario_inicio ?? ""} onChange={(e) => setForm({ ...form, horario_inicio: e.target.value })} className="mt-1" /></div>
