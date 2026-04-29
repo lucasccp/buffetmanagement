@@ -92,7 +92,10 @@ export default function Configuracoes() {
   };
 
   if (roleLoading) return <AppLayout><div className="p-6 text-sm text-muted-foreground">Carregando...</div></AppLayout>;
-  if (!isAdmin) return <Navigate to="/dashboard" replace />;
+  if (!roleLoading && !isAdmin) {
+    console.warn("[Configuracoes] usuário sem permissão de admin, redirecionando");
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <AppLayout>
