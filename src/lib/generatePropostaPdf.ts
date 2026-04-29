@@ -9,10 +9,15 @@ export interface PropostaPdfData {
   valor_total: number;
   cardapio_nome: string;
   cardapio_itens: string[];
-  descricao_servico: string;
-  texto_cardapio: string;
-  observacoes: string;
+  // 8 seções da proposta
+  abertura: string;
+  descricao_evento: string;
+  cardapio: string;
+  servicos: string;
+  investimento: string;
   forma_pagamento: string;
+  observacoes_finais: string;
+  encerramento: string;
 }
 
 export interface PropostaEmpresa {
