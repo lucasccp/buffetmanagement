@@ -1,46 +1,82 @@
-## Objetivo
+## Problema
 
-Reestruturar o PDF da proposta para refletir a mesma estrutura mostrada na pré-visualização da proposta (8 seções), mantendo o layout visual atual: cabeçalho bege com listras + título "Proposta de orçamento" + logo, dados do cliente (Cliente / Data / Local), rodapé com nome da empresa e contatos.
+Ao clicar em "Configurações" no menu (estando logado como admin), a página redireciona para `/dashboard` em vez de abrir o formulário.
 
-## Nova ordem de seções no PDF
+## Causa raiz
 
-1. **Abertura** — texto livre da IA
-2. **Descrição do Evento** — texto livre da IA
-3. **Cardápio** — nome do cardápio (negrito) + texto da IA + bullets dos itens vinculados
-4. **Serviços** — texto livre da IA (já inclui equipe completa, copos de vidro, pratos, talheres, rechaud etc.)
-5. **Investimento** — texto livre da IA + tabela com Serviço / Nº de Convidados / Valor por Pessoa / Total
-6. **Forma de Pagamento** — texto livre da IA
-7. **Observações Finais** — texto livre da IA
-8. **Encerramento** — texto livre da IA
+O hook `useRole` (em `src/hooks/use-role.ts`) é instanciado de forma independente em cada componente que o usa (AppSidebar, Configuracoes, EventoDetail, Usuarios). Cada instância:
 
-Todas as seções suportam `**negrito**` (já implementado).
+1. Inicia com `isAdmin=false, loading=true`.
+2. Dispara uma nova query a `user_roles` no `useEffect`.
+3. Só atualiza após a resposta.
 
-## Mudanças de código
+Na página `Configuracoes.tsx` o guard é:
 
-### `src/lib/generatePropostaPdf.ts`
-- Atualizar a interface `PropostaPdfData`: substituir os campos atuais (`descricao_servico`, `texto_cardapio`, `observacoes`) pelos campos correspondentes às 8 seções:
-  - `abertura`, `descricao_evento`, `cardapio`, `servicos`, `investimento`, `forma_pagamento`, `observacoes_finais`, `encerramento`
-  - manter `cardapio_nome`, `cardapio_itens`, `numero_convidados`, `valor_por_pessoa`, `valor_total` (tabela)
-- Renderizar as seções na ordem acima, reutilizando o helper `drawSection` (suporta `**negrito**`).
-- A seção "Cardápio" mantém: nome em negrito → texto da IA → bullets dos itens.
-- A seção "Investimento" mantém: texto da IA → tabela atual (cabeçalho bege escuro, 1 linha de dados).
-- Manter cabeçalho, rodapé, paleta bege/dourado e listras decorativas exatamente como estão.
+```ts
+if (roleLoading) return <AppLayout>Carregando...</AppLayout>;
+if (!isAdmin) return <Navigate to="/dashboard" replace />;
+```
 
-### `src/pages/PropostaNova.tsx`
-- Atualizar o objeto enviado para `generatePropostaPdf` para passar os 8 campos do `conteudo` retornado pela IA diretamente, em vez de concatená-los em `descricao_servico`/`observacoes`.
-- A pré-visualização editável (Textareas) continua a mesma — o usuário ainda edita os 8 campos do `conteudo`.
+Em alguns cenários (rede instável, segunda navegação, re-render do `AuthProvider` que dispara o `useEffect` de novo com `user` referência nova) a query retorna `null`/erro silencioso e `isAdmin` permanece `false` quando `loading` vira `false` — a rota redireciona o admin para o dashboard.
 
-### `src/pages/PropostaDetail.tsx`
-- Mesmo ajuste: ao re-baixar o PDF de uma proposta salva, mapear os 8 campos do `conteudo` (jsonb) para os parâmetros do gerador.
+Além disso, cada página fazendo a mesma query repetida é desperdício e amplia a janela de race condition.
 
-### Edge function `generate-proposta`
-- Já retorna os 8 campos no `tool_choice` (abertura, descricao_evento, cardapio, servicos, investimento, encerramento, observacoes_finais, forma_pagamento). Nenhuma alteração necessária.
+## Solução
 
-## O que **não** muda
+Migrar `useRole` para usar **React Query** (já presente no projeto) com `queryKey` baseada no `user.id`, criando um cache compartilhado entre todas as instâncias e evitando re-execuções desnecessárias.
 
-- Cabeçalho do PDF (faixa bege, listras, título "Proposta de orçamento", logo/círculo, nome da empresa)
-- Bloco de dados do cliente (Cliente, Data do evento, Local)
-- Rodapé do PDF (faixa bege com nome da empresa + contatos + listras)
-- Paleta de cores (bege/creme/dourado)
-- Suporte a `**negrito**` no corpo das seções
-- Estrutura da tabela de investimento
+### Mudanças
+
+**`src/hooks/use-role.ts`** — reescrever:
+
+- Usar `useQuery` com `queryKey: ["user-role", user?.id]`.
+- `enabled: !!user?.id`.
+- `staleTime: 5 * 60 * 1000` (5 min) para evitar refetch a cada navegação.
+- Retornar `{ isAdmin, loading }` mantendo a mesma API pública (sem precisar alterar quem consome).
+- Logar `console.error` se a query falhar, para diagnóstico futuro.
+
+**`src/pages/Configuracoes.tsx`** — endurecer guard:
+
+- Continuar usando `roleLoading` para mostrar tela de carregamento.
+- Substituir o `<Navigate>` imediato por uma checagem que só dispara quando `loading=false` E `isAdmin=false` (já é o caso, mas adicionar log para depurar caso volte a ocorrer).
+- Garantir que `useQuery(["empresa_config"])` só execute quando `isAdmin=true` (`enabled: isAdmin`), evitando 403 silencioso por RLS.
+
+**Nenhuma mudança de banco de dados**: as policies de `user_roles` e `empresa_config` já permitem leitura corretamente.
+
+## Resultado esperado
+
+- Admin clica em "Configurações" → vê brevemente "Carregando..." (ou nada, se o cache já tiver a role) → carrega o formulário de empresa.
+- Não há mais redirect indevido para `/dashboard`.
+- Demais páginas que usam `useRole` (AppSidebar, EventoDetail, Usuarios) continuam funcionando sem alteração de código, e ganham cache compartilhado de role (menos requisições).
+
+## Detalhes técnicos
+
+```ts
+// src/hooks/use-role.ts (novo)
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "./use-auth";
+
+export function useRole() {
+  const { user } = useAuth();
+  const { data, isLoading } = useQuery({
+    queryKey: ["user-role", user?.id],
+    enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user!.id)
+        .eq("role", "admin")
+        .maybeSingle();
+      if (error) {
+        console.error("[useRole] erro ao buscar role:", error);
+        throw error;
+      }
+      return !!data;
+    },
+  });
+  return { isAdmin: !!data, loading: !!user && isLoading };
+}
+```
