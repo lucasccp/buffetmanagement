@@ -6,12 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import {
+  CardapioFormFields,
+  emptyCategorias,
+  flattenCategorias,
+  groupItemsByCategoria,
+  type CategoriaForm,
+} from "@/components/CardapioFormFields";
 
 interface CardapioItem {
   id: string;
   nome: string;
   cardapio_id: string;
+  categoria?: string | null;
 }
 
 interface Cardapio {
@@ -31,14 +38,13 @@ export function EditCardapioDialog({ cardapio, open, onOpenChange }: Props) {
   const qc = useQueryClient();
   const [nome, setNome] = useState("");
   const [valorPP, setValorPP] = useState("");
-  const [itens, setItens] = useState<{ id?: string; nome: string }[]>([{ nome: "" }]);
+  const [categorias, setCategorias] = useState<CategoriaForm[]>(emptyCategorias());
 
   useEffect(() => {
     if (cardapio) {
       setNome(cardapio.nome);
       setValorPP(String(cardapio.valor_sugerido_pp || ""));
-      const existing = cardapio.cardapio_itens?.map((i) => ({ id: i.id, nome: i.nome })) ?? [];
-      setItens(existing.length > 0 ? existing : [{ nome: "" }]);
+      setCategorias(groupItemsByCategoria(cardapio.cardapio_itens ?? []));
     }
   }, [cardapio]);
 
@@ -52,11 +58,12 @@ export function EditCardapioDialog({ cardapio, open, onOpenChange }: Props) {
         .eq("id", cardapio.id);
       if (error) throw error;
 
+      const flat = flattenCategorias(categorias);
+
       // Delete removed items
-      const keepIds = itens.filter((i) => i.id).map((i) => i.id!);
+      const keepIds = flat.filter((i) => i.id).map((i) => i.id!);
       const originalIds = cardapio.cardapio_itens?.map((i) => i.id) ?? [];
       const toDelete = originalIds.filter((id) => !keepIds.includes(id));
-
       if (toDelete.length > 0) {
         const { error: delErr } = await supabase
           .from("cardapio_itens")
@@ -65,21 +72,21 @@ export function EditCardapioDialog({ cardapio, open, onOpenChange }: Props) {
         if (delErr) throw delErr;
       }
 
-      // Update existing items
-      for (const item of itens.filter((i) => i.id && i.nome.trim())) {
+      // Update existing items (nome + categoria)
+      for (const item of flat.filter((i) => i.id)) {
         const { error: updErr } = await supabase
           .from("cardapio_itens")
-          .update({ nome: item.nome.trim() })
+          .update({ nome: item.nome, categoria: item.categoria })
           .eq("id", item.id!);
         if (updErr) throw updErr;
       }
 
       // Insert new items
-      const newItems = itens.filter((i) => !i.id && i.nome.trim());
+      const newItems = flat.filter((i) => !i.id);
       if (newItems.length > 0) {
         const { error: insErr } = await supabase
           .from("cardapio_itens")
-          .insert(newItems.map((i) => ({ cardapio_id: cardapio.id, nome: i.nome.trim() })));
+          .insert(newItems.map((i) => ({ cardapio_id: cardapio.id, nome: i.nome, categoria: i.categoria })));
         if (insErr) throw insErr;
       }
     },
@@ -88,44 +95,37 @@ export function EditCardapioDialog({ cardapio, open, onOpenChange }: Props) {
       onOpenChange(false);
       toast.success("Cardápio atualizado!");
     },
+    onError: (e: any) => toast.error(e?.message || "Erro ao atualizar cardápio."),
   });
-
-  const addItem = () => setItens([...itens, { nome: "" }]);
-  const updateItem = (idx: number, val: string) => {
-    const copy = [...itens];
-    copy[idx] = { ...copy[idx], nome: val };
-    setItens(copy);
-  };
-  const removeItem = (idx: number) => setItens(itens.filter((_, i) => i !== idx));
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader><DialogTitle>Editar Cardápio</DialogTitle></DialogHeader>
-        <form onSubmit={(e) => { e.preventDefault(); updateMut.mutate(); }} className="flex min-h-0 flex-1 flex-col">
-          <div className="space-y-3 overflow-y-auto pr-2">
-            <div><Label className="text-xs">Nome *</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" /></div>
-            <div><Label className="text-xs">Valor Sugerido por Pessoa</Label><Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" /></div>
-            <div>
-              <Label className="text-xs">Itens do Cardápio</Label>
-              <div className="space-y-2 mt-1.5">
-                {itens.map((item, idx) => (
-                  <div key={idx} className="flex gap-2">
-                    <Input placeholder={`Item ${idx + 1}`} value={item.nome} onChange={(e) => updateItem(idx, e.target.value)} />
-                    {itens.length > 1 && (
-                      <Button type="button" size="sm" variant="ghost" className="h-9 w-9 p-0 shrink-0" onClick={() => removeItem(idx)}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    )}
-                  </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" onClick={addItem} className="text-xs">
-                  <Plus className="h-3 w-3 mr-1" />Adicionar Item
-                </Button>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+        <DialogHeader className="shrink-0 border-b px-6 py-4">
+          <DialogTitle>Editar Cardápio</DialogTitle>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => { e.preventDefault(); updateMut.mutate(); }}
+          className="flex min-h-0 flex-1 flex-col"
+        >
+          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Nome *</Label>
+                <Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" />
+              </div>
+              <div>
+                <Label className="text-xs">Valor por Pessoa</Label>
+                <Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" placeholder="0,00" />
               </div>
             </div>
+            <CardapioFormFields categorias={categorias} onChange={setCategorias} />
           </div>
-          <Button type="submit" className="w-full mt-3 shrink-0" size="sm" disabled={updateMut.isPending}>Salvar</Button>
+          <div className="shrink-0 border-t px-6 py-3 bg-background">
+            <Button type="submit" className="w-full" size="sm" disabled={updateMut.isPending || !nome.trim()}>
+              {updateMut.isPending ? "Salvando..." : "Salvar Alterações"}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
