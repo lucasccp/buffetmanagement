@@ -9,19 +9,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Plus, Eye, X, FileText, Upload, Pencil } from "lucide-react";
+import { Plus, Eye, FileText, Upload, Pencil } from "lucide-react";
 import { DeleteConfirmDialog } from "@/components/DeleteConfirmDialog";
 import { formatCurrency } from "@/lib/formatters";
 import { generateCardapioPdf } from "@/lib/generateCardapioPdf";
 import { ImportCardapioDialog } from "@/components/ImportCardapioDialog";
 import { EditCardapioDialog } from "@/components/EditCardapioDialog";
+import { CardapioFormFields, emptyCategorias, flattenCategorias, type CategoriaForm } from "@/components/CardapioFormFields";
 
 export default function Cardapio() {
   const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const [nome, setNome] = useState("");
   const [valorPP, setValorPP] = useState("");
-  const [itensNomes, setItensNomes] = useState<string[]>([""]);
+  const [categorias, setCategorias] = useState<CategoriaForm[]>(emptyCategorias());
   const [viewId, setViewId] = useState<string | null>(null);
   const [pdfCardapioId, setPdfCardapioId] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
@@ -40,17 +41,36 @@ export default function Cardapio() {
     },
   });
 
+  const resetForm = () => {
+    setNome("");
+    setValorPP("");
+    setCategorias(emptyCategorias());
+  };
+
   const createMut = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.from("cardapios").insert({ nome, valor_sugerido_pp: parseFloat(valorPP) || 0 }).select().single();
+      const { data, error } = await supabase
+        .from("cardapios")
+        .insert({ nome, valor_sugerido_pp: parseFloat(valorPP) || 0 })
+        .select()
+        .single();
       if (error) throw error;
-      const validItens = itensNomes.filter((n) => n.trim());
-      if (validItens.length > 0) {
-        const { error: err2 } = await supabase.from("cardapio_itens").insert(validItens.map((n) => ({ cardapio_id: data.id, nome: n.trim() })));
+
+      const flat = flattenCategorias(categorias);
+      if (flat.length > 0) {
+        const { error: err2 } = await supabase
+          .from("cardapio_itens")
+          .insert(flat.map((i) => ({ cardapio_id: data.id, nome: i.nome, categoria: i.categoria })));
         if (err2) throw err2;
       }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["cardapios"] }); setOpen(false); setNome(""); setValorPP(""); setItensNomes([""]); toast.success("Cardápio cadastrado!"); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["cardapios"] });
+      setOpen(false);
+      resetForm();
+      toast.success("Cardápio cadastrado!");
+    },
+    onError: (e: any) => toast.error(e?.message || "Erro ao cadastrar cardápio."),
   });
 
   const deleteMut = useMutation({
@@ -61,11 +81,19 @@ export default function Cardapio() {
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["cardapios"] }); toast.success("Cardápio removido!"); },
   });
 
-  const addItemField = () => setItensNomes([...itensNomes, ""]);
-  const updateItemField = (idx: number, val: string) => { const copy = [...itensNomes]; copy[idx] = val; setItensNomes(copy); };
-  const removeItemField = (idx: number) => setItensNomes(itensNomes.filter((_, i) => i !== idx));
-
   const viewCardapio = cardapios.find((c) => c.id === viewId);
+
+  // Agrupa itens da visualização por categoria
+  const groupedView = (() => {
+    if (!viewCardapio?.cardapio_itens) return [];
+    const map = new Map<string, { id: string; nome: string }[]>();
+    for (const it of viewCardapio.cardapio_itens as any[]) {
+      const key = (it.categoria ?? "").trim() || "Sem categoria";
+      if (!map.has(key)) map.set(key, []);
+      map.get(key)!.push({ id: it.id, nome: it.nome });
+    }
+    return Array.from(map.entries());
+  })();
 
   return (
     <AppLayout>
@@ -76,32 +104,41 @@ export default function Cardapio() {
             <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
               <Upload className="h-3.5 w-3.5 mr-1.5" />Importar PDF
             </Button>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) resetForm(); }}>
               <DialogTrigger asChild><Button size="sm"><Plus className="h-3.5 w-3.5 mr-1.5" />Novo Cardápio</Button></DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader><DialogTitle>Novo Cardápio</DialogTitle></DialogHeader>
-                <form onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }} className="space-y-3">
-                  <div><Label className="text-xs">Nome *</Label><Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" /></div>
-                  <div><Label className="text-xs">Valor Sugerido por Pessoa</Label><Input type="number" step="0.01" value={valorPP} onChange={(e) => setValorPP(e.target.value)} className="mt-1" /></div>
-                  <div>
-                    <Label className="text-xs">Itens do Cardápio</Label>
-                    <div className="space-y-2 mt-1.5">
-                      {itensNomes.map((item, idx) => (
-                        <div key={idx} className="flex gap-2">
-                          <Input placeholder={`Item ${idx + 1}`} value={item} onChange={(e) => updateItemField(idx, e.target.value)} />
-                          {itensNomes.length > 1 && (
-                            <Button type="button" size="sm" variant="ghost" className="h-9 w-9 p-0 shrink-0" onClick={() => removeItemField(idx)}>
-                              <X className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                      <Button type="button" variant="outline" size="sm" onClick={addItemField} className="text-xs">
-                        <Plus className="h-3 w-3 mr-1" />Adicionar Item
-                      </Button>
+              <DialogContent className="max-w-xl max-h-[90vh] overflow-hidden flex flex-col gap-0 p-0">
+                <DialogHeader className="shrink-0 border-b px-6 py-4">
+                  <DialogTitle>Novo Cardápio</DialogTitle>
+                </DialogHeader>
+                <form
+                  onSubmit={(e) => { e.preventDefault(); createMut.mutate(); }}
+                  className="flex min-h-0 flex-1 flex-col"
+                >
+                  <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <Label className="text-xs">Nome *</Label>
+                        <Input value={nome} onChange={(e) => setNome(e.target.value)} required className="mt-1" />
+                      </div>
+                      <div>
+                        <Label className="text-xs">Valor por Pessoa</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={valorPP}
+                          onChange={(e) => setValorPP(e.target.value)}
+                          className="mt-1"
+                          placeholder="0,00"
+                        />
+                      </div>
                     </div>
+                    <CardapioFormFields categorias={categorias} onChange={setCategorias} />
                   </div>
-                  <Button type="submit" className="w-full" size="sm" disabled={createMut.isPending}>Cadastrar</Button>
+                  <div className="shrink-0 border-t px-6 py-3 bg-background">
+                    <Button type="submit" className="w-full" size="sm" disabled={createMut.isPending || !nome.trim()}>
+                      {createMut.isPending ? "Salvando..." : "Cadastrar Cardápio"}
+                    </Button>
+                  </div>
                 </form>
               </DialogContent>
             </Dialog>
@@ -151,25 +188,33 @@ export default function Cardapio() {
         </div>
 
         <Dialog open={!!viewId} onOpenChange={() => setViewId(null)}>
-          <DialogContent>
+          <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
             <DialogHeader><DialogTitle>{viewCardapio?.nome}</DialogTitle></DialogHeader>
             {viewCardapio && (
               <div className="space-y-4">
                 <p className="text-xs text-muted-foreground">Valor sugerido por pessoa: <span className="font-semibold text-foreground">{formatCurrency(viewCardapio.valor_sugerido_pp)}</span></p>
-                <div>
-                  <Label className="text-xs">Itens</Label>
-                  <div className="mt-2 space-y-1.5">
-                    {viewCardapio.cardapio_itens?.map((i: any) => (
-                      <div key={i.id} className="flex items-center gap-2 text-sm">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
-                        {i.nome}
+                {groupedView.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">Nenhum item</p>
+                ) : (
+                  <div className="space-y-3">
+                    {groupedView.map(([catNome, itens]) => (
+                      <div key={catNome} className="rounded-lg border bg-muted/15 p-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <Badge variant="secondary" className="text-xs">{catNome}</Badge>
+                          <span className="text-xs text-muted-foreground">{itens.length} {itens.length === 1 ? "item" : "itens"}</span>
+                        </div>
+                        <div className="space-y-1.5">
+                          {itens.map((i) => (
+                            <div key={i.id} className="flex items-center gap-2 text-sm">
+                              <span className="w-1.5 h-1.5 rounded-full bg-primary shrink-0" />
+                              {i.nome}
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     ))}
-                    {(!viewCardapio.cardapio_itens || viewCardapio.cardapio_itens.length === 0) && (
-                      <p className="text-xs text-muted-foreground">Nenhum item</p>
-                    )}
                   </div>
-                </div>
+                )}
               </div>
             )}
           </DialogContent>
