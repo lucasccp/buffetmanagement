@@ -1,0 +1,1 @@
+ALTER TABLE public.cardapio_itens ADD COLUMN IF NOT EXISTS categoria text;

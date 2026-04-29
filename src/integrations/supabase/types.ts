@@ -64,16 +64,19 @@ export type Database = {
       cardapio_itens: {
         Row: {
           cardapio_id: string
+          categoria: string | null
           id: string
           nome: string
         }
         Insert: {
           cardapio_id: string
+          categoria?: string | null
           id?: string
           nome: string
         }
         Update: {
           cardapio_id?: string
+          categoria?: string | null
           id?: string
           nome?: string
         }
