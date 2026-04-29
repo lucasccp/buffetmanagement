@@ -332,9 +332,12 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
 
   y += rowH + 10;
 
-  // OBSERVATIONS
-  if (data.observacoes) drawSection("Observações", data.observacoes);
-  if (data.forma_pagamento) drawSection("Forma de pagamento", data.forma_pagamento);
+  // 6. FORMA DE PAGAMENTO
+  if (data.forma_pagamento) drawSection("Forma de Pagamento", data.forma_pagamento);
+  // 7. OBSERVAÇÕES FINAIS
+  if (data.observacoes_finais) drawSection("Observações Finais", data.observacoes_finais);
+  // 8. ENCERRAMENTO
+  if (data.encerramento) drawSection("Encerramento", data.encerramento);
 
   // ─────────── FOOTER ───────────
   const footerH = 30;
