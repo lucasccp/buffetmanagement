@@ -15,7 +15,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { useState } from "react";
 import { formatCurrency, formatDate, leadStatusLabels } from "@/lib/formatters";
-import { Sparkles, Copy, RefreshCw, ArrowRight, ArrowLeft, Pencil, Save } from "lucide-react";
+import { ArrowRight, ArrowLeft, Pencil, Save, FileText, Plus, Eye } from "lucide-react";
 
 const statusColors: Record<string, string> = {
   novo: "bg-info/10 text-info border-info/20",
