@@ -20,6 +20,7 @@ export default function Configuracoes() {
 
   const { data: config, isLoading } = useQuery({
     queryKey: ["empresa_config"],
+    enabled: isAdmin,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("empresa_config" as any)
