@@ -265,15 +265,13 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   }
 
   if (data.cardapio) {
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    const cleaned = data.cardapio.replace(/\*\*/g, "");
-    const cleanLines = doc.splitTextToSize(cleaned, W - 60);
-    const wrapped = wrapPreservingMarkers(data.cardapio, cleanLines);
-    wrapped.forEach((l: string) => {
+    const segs = tokenize(data.cardapio);
+    const wrapped = wrapSegments(segs, W - 60, 10);
+    wrapped.forEach((line) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
-      drawRichLine(l, 40, y);
+      drawSegmentLine(line, 40, y);
       y += 5;
     });
     y += 2;
