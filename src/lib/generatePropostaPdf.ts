@@ -434,7 +434,7 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   if (data.encerramento) drawSection("Encerramento", data.encerramento);
 
   // ─────────── FOOTER em TODAS as páginas ───────────
-  const totalPages = (doc as any).internal.getNumberOfPages();
+  const totalPages = (doc.internal as unknown as { getNumberOfPages: () => number }).getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     const fy = H - FOOTER_H;
