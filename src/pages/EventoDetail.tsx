@@ -100,7 +100,6 @@ export default function EventoDetail() {
             <TabsTrigger value="custos">Custos</TabsTrigger>
             <TabsTrigger value="cardapio">Cardápio</TabsTrigger>
             <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
-            <TabsTrigger value="proposta">Proposta</TabsTrigger>
           </TabsList>
 
           <TabsContent value="geral"><GeralTab evento={evento} onUpdate={(v) => updateEvento.mutate(v)} /></TabsContent>
@@ -108,7 +107,6 @@ export default function EventoDetail() {
           <TabsContent value="custos"><CustosTab eventoId={id!} /></TabsContent>
           <TabsContent value="cardapio"><CardapioTab eventoId={id!} /></TabsContent>
           <TabsContent value="pagamentos"><PagamentosTab eventoId={id!} evento={evento} isAdmin={isAdmin} /></TabsContent>
-          <TabsContent value="proposta"><PropostaTab eventoId={id!} /></TabsContent>
         </Tabs>
       </div>
     </AppLayout>
