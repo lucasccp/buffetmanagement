@@ -141,7 +141,20 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   doc.line(18, y, W - 18, y);
   y += 9;
 
-  // Helper to draw a section title + body
+  // Render a single line that may contain **bold** segments
+  const drawRichLine = (line: string, x: number, yPos: number) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter((s) => s.length > 0);
+    let cx = x;
+    parts.forEach((part) => {
+      const isBold = part.startsWith("**") && part.endsWith("**");
+      const text = isBold ? part.slice(2, -2) : part;
+      doc.setFont("helvetica", isBold ? "bold" : "normal");
+      doc.text(text, cx, yPos);
+      cx += doc.getTextWidth(text);
+    });
+  };
+
+  // Helper to draw a section title + body (supports **bold** in body)
   const drawSection = (title: string, body: string) => {
     if (y > H - 60) { doc.addPage(); y = 25; }
     doc.setFont("helvetica", "bold");
@@ -149,19 +162,22 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     doc.setTextColor(...TEXT_DARK);
     doc.text(title.toUpperCase(), 18, y);
     y += 6;
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    const lines = doc.splitTextToSize(body || "—", W - 60);
-    lines.forEach((l: string) => {
+    // splitTextToSize can break inside ** markers; use normal font width as approximation
+    doc.setFont("helvetica", "normal");
+    const lines = doc.splitTextToSize((body || "—").replace(/\*\*/g, ""), W - 60);
+    // Re-wrap original (with markers) using the cleaned line lengths
+    const wrapped = wrapPreservingMarkers(body || "—", lines);
+    wrapped.forEach((l: string) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
-      doc.text(l, 40, y);
+      drawRichLine(l, 40, y);
       y += 5;
     });
     y += 4;
   };
 
-  drawSection("Descrição do serviço", data.descricao_servico);
+  drawSection("Apresentação", data.descricao_servico);
 
   // CARDAPIO with itens
   if (y > H - 80) { doc.addPage(); y = 25; }
