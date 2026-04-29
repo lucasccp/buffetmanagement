@@ -154,6 +154,37 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     });
   };
 
+  // Wrap text preserving **markers**: splits the original string into lines whose
+  // *visible* (marker-stripped) text matches the lengths produced by splitTextToSize.
+  const wrapPreservingMarkers = (original: string, cleanLines: string[]): string[] => {
+    // Walk the original char-by-char skipping ** markers; consume chars equal to each clean line length.
+    const out: string[] = [];
+    let i = 0;
+    for (const cleanLine of cleanLines) {
+      let consumed = 0;
+      let buf = "";
+      const target = cleanLine.length;
+      while (i < original.length && consumed < target) {
+        if (original[i] === "*" && original[i + 1] === "*") {
+          buf += "**";
+          i += 2;
+          continue;
+        }
+        buf += original[i];
+        i++;
+        consumed++;
+      }
+      // skip any whitespace that splitTextToSize trimmed between lines
+      while (i < original.length && (original[i] === " " || original[i] === "\n")) {
+        // include newlines as line breaks already handled by splitTextToSize; just skip
+        if (original[i] === "\n") { i++; break; }
+        i++;
+      }
+      out.push(buf);
+    }
+    return out;
+  };
+
   // Helper to draw a section title + body (supports **bold** in body)
   const drawSection = (title: string, body: string) => {
     if (y > H - 60) { doc.addPage(); y = 25; }
@@ -164,11 +195,10 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     y += 6;
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    // splitTextToSize can break inside ** markers; use normal font width as approximation
     doc.setFont("helvetica", "normal");
-    const lines = doc.splitTextToSize((body || "—").replace(/\*\*/g, ""), W - 60);
-    // Re-wrap original (with markers) using the cleaned line lengths
-    const wrapped = wrapPreservingMarkers(body || "—", lines);
+    const cleaned = (body || "—").replace(/\*\*/g, "");
+    const cleanLines = doc.splitTextToSize(cleaned, W - 60);
+    const wrapped = wrapPreservingMarkers(body || "—", cleanLines);
     wrapped.forEach((l: string) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
       drawRichLine(l, 40, y);
