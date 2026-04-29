@@ -23,8 +23,16 @@ export const leadStatusLabels: Record<string, string> = {
   novo: "Novo",
   contato_realizado: "Contato Realizado",
   proposta_enviada: "Proposta Enviada",
-  fechado: "Fechado",
+  aceita: "Aceita",
+  fechado: "Convertido",
   perdido: "Perdido",
+};
+
+export const propostaStatusLabels: Record<string, string> = {
+  enviada: "Enviada",
+  aceita: "Aceita",
+  convertida: "Convertida",
+  cancelada: "Cancelada",
 };
 
 export const eventoStatusLabels: Record<string, string> = {

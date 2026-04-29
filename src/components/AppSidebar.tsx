@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from "react-router-dom";
-import { LayoutDashboard, Users, CalendarDays, Calendar, UtensilsCrossed, UsersRound, Wallet, LogOut, ShieldCheck, CreditCard } from "lucide-react";
+import { LayoutDashboard, Users, CalendarDays, Calendar, UtensilsCrossed, UsersRound, Wallet, LogOut, ShieldCheck, CreditCard, FileText, Settings } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/use-auth";
 import { useRole } from "@/hooks/use-role";
@@ -19,6 +19,7 @@ import {
 const baseNavItems = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/leads", label: "Leads", icon: Users },
+  { to: "/propostas", label: "Propostas", icon: FileText },
   { to: "/eventos", label: "Eventos", icon: CalendarDays },
   { to: "/equipe", label: "Equipe", icon: UsersRound },
   { to: "/cardapio", label: "Cardápio", icon: UtensilsCrossed },
@@ -37,6 +38,7 @@ export default function AppSidebar() {
 
   const navItems = [
     ...baseNavItems,
+    ...(isAdmin ? [{ to: "/configuracoes", label: "Configurações", icon: Settings }] : []),
     ...(isAdmin ? [{ to: "/usuarios", label: "Usuários", icon: ShieldCheck }] : []),
   ];
 
