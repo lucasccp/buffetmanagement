@@ -33,8 +33,17 @@ export interface PropostaEmpresa {
 const BEGE: [number, number, number] = [239, 233, 221];        // #EFE9DD
 const BEGE_DARK: [number, number, number] = [220, 213, 198];   // tabela header
 const TEXT_DARK: [number, number, number] = [25, 25, 25];      // #191919
+const TEXT_BODY: [number, number, number] = [70, 70, 70];      // corpo levemente suavizado
 const TEXT_MUTED: [number, number, number] = [110, 110, 110];
 const LINE: [number, number, number] = [200, 200, 200];
+
+// Margens / layout
+const MARGIN_X = 18;
+const BODY_X = 22;       // corpo levemente indentado em relação ao título
+const BULLET_X = 24;
+const SECTION_TITLE_TO_BODY = 9;  // respiro entre título e corpo
+const SECTION_BOTTOM = 7;         // respiro entre seções
+const TITLE_RULE_LEN = 22;        // comprimento da linha-acento sob o título
 
 function hexToRgb(hex: string | null): [number, number, number] {
   if (!hex) return [244, 185, 66];
@@ -70,7 +79,6 @@ async function loadImageDataUrl(url: string): Promise<string | null> {
 }
 
 function drawStripes(doc: jsPDF, x: number, y: number, w: number, h: number) {
-  // Vertical decorative stripes (lighter beige)
   doc.setFillColor(225, 219, 205);
   const stripeW = 1.5;
   const gap = 3.5;
@@ -85,21 +93,18 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   const H = 297;
   const accent = hexToRgb(empresa.cor_destaque);
 
-  // ─────────── HEADER ───────────
+  // ─────────── HEADER (página 1) ───────────
   const headerH = 50;
   doc.setFillColor(...BEGE);
   doc.rect(0, 0, W, headerH, "F");
-  // Decorative stripe blocks (left and middle, like the template)
   drawStripes(doc, 10, 6, 35, 8);
   drawStripes(doc, 10, 35, 50, 8);
 
-  // Title
   doc.setTextColor(...TEXT_DARK);
   doc.setFont("times", "normal");
   doc.setFontSize(30);
   doc.text("Proposta de orçamento", 18, 28);
 
-  // Logo (right side)
   if (empresa.logo_url) {
     const logoData = await loadImageDataUrl(empresa.logo_url);
     if (logoData) {
@@ -111,7 +116,6 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
       }
     }
   } else {
-    // Decorative accent square as logo placeholder
     doc.setFillColor(accent[0], accent[1], accent[2]);
     doc.circle(W - 30, 25, 10, "F");
     doc.setTextColor(...TEXT_DARK);
@@ -125,9 +129,9 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   doc.setTextColor(...TEXT_DARK);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
-  doc.text("CLIENTE:", 18, y);
+  doc.text("CLIENTE:", MARGIN_X, y);
   doc.setFont("helvetica", "normal");
-  doc.text(data.cliente, 40, y);
+  doc.text(data.cliente, MARGIN_X + 22, y);
 
   doc.setFont("helvetica", "bold");
   doc.text("DATA DO EVENTO:", 110, y);
@@ -136,15 +140,15 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
 
   y += 7;
   doc.setFont("helvetica", "bold");
-  doc.text("LOCAL DO EVENTO:", 18, y);
+  doc.text("LOCAL DO EVENTO:", MARGIN_X, y);
   doc.setFont("helvetica", "normal");
-  doc.text(data.local_evento || "A definir", 56, y);
+  doc.text(data.local_evento || "A definir", MARGIN_X + 38, y);
 
   y += 5;
   doc.setDrawColor(...LINE);
   doc.setLineWidth(0.2);
-  doc.line(18, y, W - 18, y);
-  y += 9;
+  doc.line(MARGIN_X, y, W - MARGIN_X, y);
+  y += 11;
 
   // Tokenize a string with **bold** markers into segments
   type Segment = { text: string; bold: boolean };
@@ -159,7 +163,6 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     return out;
   };
 
-  // Word-wrap segments into lines that fit `maxWidth`. Returns array of lines (each = Segment[]).
   const wrapSegments = (segments: Segment[], maxWidth: number, fontSize: number): Segment[][] => {
     doc.setFontSize(fontSize);
     const lines: Segment[][] = [];
@@ -189,20 +192,15 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
 
     let firstWordOfLine = true;
     for (const seg of segments) {
-      // Split on newlines first
       const blocks = seg.text.split("\n");
       blocks.forEach((block, bi) => {
         if (bi > 0) {
-          // forced line break
           lines.push(current);
           current = [];
           currentWidth = 0;
           firstWordOfLine = true;
         }
-        // split block into words preserving spacing logic
         const words = block.split(/\s+/).filter((w) => w.length > 0);
-        const startsWithSpace = /^\s/.test(block);
-        if (startsWithSpace && current.length > 0) firstWordOfLine = false;
         words.forEach((word) => {
           pushWord(word, seg.bold, !firstWordOfLine);
           firstWordOfLine = false;
@@ -222,24 +220,48 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     }
   };
 
-  // Helper to draw a section title + body (supports **bold** in body)
-  const drawSection = (title: string, body: string) => {
-    if (y > H - 60) { doc.addPage(); y = 25; }
+  const FOOTER_H = 30;
+  const PAGE_BOTTOM = H - FOOTER_H - 8;
+
+  // Garante espaço mínimo restante; senão vira página
+  const ensureSpace = (needed: number) => {
+    if (y + needed > PAGE_BOTTOM) {
+      doc.addPage();
+      y = 25;
+    }
+  };
+
+  // Desenha título da seção com linha-acento
+  const drawSectionTitle = (title: string) => {
+    // Garante espaço para título + pelo menos 2 linhas de corpo (~20mm)
+    ensureSpace(20);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setTextColor(...TEXT_DARK);
-    doc.text(title.toUpperCase(), 18, y);
-    y += 6;
+    doc.text(title.toUpperCase(), MARGIN_X, y);
+    // Linha-acento abaixo do título
+    doc.setDrawColor(accent[0], accent[1], accent[2]);
+    doc.setLineWidth(0.8);
+    doc.line(MARGIN_X, y + 2, MARGIN_X + TITLE_RULE_LEN, y + 2);
+    y += SECTION_TITLE_TO_BODY;
+  };
+
+  const drawBody = (body: string) => {
     doc.setFontSize(10);
-    doc.setTextColor(60, 60, 60);
+    doc.setTextColor(...TEXT_BODY);
     const segments = tokenize(body || "—");
-    const wrapped = wrapSegments(segments, W - 60, 10);
+    const wrapped = wrapSegments(segments, W - BODY_X - MARGIN_X, 10);
     wrapped.forEach((line) => {
-      if (y > H - 40) { doc.addPage(); y = 25; }
-      drawSegmentLine(line, 40, y);
+      ensureSpace(6);
+      drawSegmentLine(line, BODY_X, y);
       y += 5;
     });
-    y += 4;
+  };
+
+  const drawSection = (title: string, body: string) => {
+    drawSectionTitle(title);
+    drawBody(body);
+    y += SECTION_BOTTOM;
   };
 
   // 1. ABERTURA
@@ -248,62 +270,57 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   // 2. DESCRIÇÃO DO EVENTO
   drawSection("Descrição do Evento", data.descricao_evento);
 
-  // 3. CARDÁPIO (nome + texto da IA + bullets)
-  if (y > H - 80) { doc.addPage(); y = 25; }
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(11);
-  doc.setTextColor(...TEXT_DARK);
-  doc.text("CARDÁPIO", 18, y);
-  y += 6;
+  // 3. CARDÁPIO (título + apresentação curta + bullets)
+  drawSectionTitle("Cardápio");
 
   if (data.cardapio_nome) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(...TEXT_DARK);
-    doc.text(data.cardapio_nome, 40, y);
-    y += 5;
+    doc.text(data.cardapio_nome, BODY_X, y);
+    y += 6;
   }
 
   if (data.cardapio) {
-    doc.setFontSize(10);
-    doc.setTextColor(60, 60, 60);
-    const segs = tokenize(data.cardapio);
-    const wrapped = wrapSegments(segs, W - 60, 10);
-    wrapped.forEach((line) => {
-      if (y > H - 40) { doc.addPage(); y = 25; }
-      drawSegmentLine(line, 40, y);
-      y += 5;
-    });
+    drawBody(data.cardapio);
     y += 2;
   }
 
   if (data.cardapio_itens.length) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
-    doc.setTextColor(80, 80, 80);
+    doc.setTextColor(...TEXT_BODY);
     data.cardapio_itens.forEach((item) => {
-      if (y > H - 40) { doc.addPage(); y = 25; }
-      doc.text(`•  ${item}`, 42, y);
-      y += 4.5;
+      ensureSpace(6);
+      doc.text(`•  ${item}`, BULLET_X, y);
+      y += 4.8;
     });
-    y += 4;
   }
+  y += SECTION_BOTTOM;
 
   // 4. SERVIÇOS
   drawSection("Serviços", data.servicos);
 
   // 5. INVESTIMENTO (texto + tabela)
-  if (data.investimento) drawSection("Investimento", data.investimento);
+  if (data.investimento) {
+    drawSectionTitle("Investimento");
+    drawBody(data.investimento);
+    y += 4;
+  } else {
+    drawSectionTitle("Investimento");
+  }
 
-  // ─────────── TABLE ───────────
-  if (y > H - 60) { doc.addPage(); y = 25; }
-  const tableX = 18;
-  const tableW = W - 36;
+  // ─────────── TABELA DE INVESTIMENTO ───────────
+  const tableX = MARGIN_X;
+  const tableW = W - 2 * MARGIN_X;
   const colW = [tableW * 0.4, tableW * 0.22, tableW * 0.18, tableW * 0.2];
   const headerRowH = 12;
   const rowH = 11;
 
-  // Header row
+  // Garante que a tabela toda caiba na página
+  ensureSpace(headerRowH + rowH + 6);
+
+  // Header da tabela
   doc.setFillColor(...BEGE_DARK);
   doc.rect(tableX, y, tableW, headerRowH, "F");
   doc.setDrawColor(...LINE);
@@ -328,16 +345,14 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
 
   y += headerRowH;
 
-  // Body row
+  // Linha de dados
   doc.setDrawColor(...LINE);
   doc.rect(tableX, y, tableW, rowH);
-  // column dividers
   let dx = tableX;
   for (let i = 0; i < colW.length - 1; i++) {
     dx += colW[i];
     doc.line(dx, y, dx, y + rowH);
   }
-  // header dividers
   let dx2 = tableX;
   for (let i = 0; i < colW.length - 1; i++) {
     dx2 += colW[i];
@@ -358,7 +373,7 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   cx += colW[2];
   doc.text(fmtCurrency(data.valor_total ?? 0), cx + colW[3] / 2, rowMid, { align: "center" });
 
-  y += rowH + 10;
+  y += rowH + SECTION_BOTTOM + 4;
 
   // 6. FORMA DE PAGAMENTO
   if (data.forma_pagamento) drawSection("Forma de Pagamento", data.forma_pagamento);
@@ -367,26 +382,34 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   // 8. ENCERRAMENTO
   if (data.encerramento) drawSection("Encerramento", data.encerramento);
 
-  // ─────────── FOOTER ───────────
-  const footerH = 30;
-  const fy = H - footerH;
-  doc.setFillColor(...BEGE);
-  doc.rect(0, fy, W, footerH, "F");
-  drawStripes(doc, 10, H - 10, 50, 6);
+  // ─────────── FOOTER em TODAS as páginas ───────────
+  const totalPages = (doc as any).internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    doc.setPage(i);
+    const fy = H - FOOTER_H;
+    doc.setFillColor(...BEGE);
+    doc.rect(0, fy, W, FOOTER_H, "F");
+    drawStripes(doc, 10, H - 10, 50, 6);
 
-  doc.setTextColor(...TEXT_DARK);
-  doc.setFont("times", "normal");
-  doc.setFontSize(14);
-  doc.text(empresa.nome.toUpperCase(), 18, fy + 14);
+    doc.setTextColor(...TEXT_DARK);
+    doc.setFont("times", "normal");
+    doc.setFontSize(14);
+    doc.text(empresa.nome.toUpperCase(), MARGIN_X, fy + 14);
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(...TEXT_MUTED);
-  const contactParts: string[] = [];
-  if (empresa.telefone) contactParts.push(empresa.telefone);
-  if (empresa.endereco) contactParts.push(empresa.endereco);
-  if (empresa.email) contactParts.push(empresa.email);
-  doc.text(contactParts.join("  ·  "), W - 18, fy + 14, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(...TEXT_MUTED);
+    const contactParts: string[] = [];
+    if (empresa.telefone) contactParts.push(empresa.telefone);
+    if (empresa.endereco) contactParts.push(empresa.endereco);
+    if (empresa.email) contactParts.push(empresa.email);
+    doc.text(contactParts.join("  ·  "), W - MARGIN_X, fy + 14, { align: "right" });
+
+    // Numeração de páginas
+    doc.setFontSize(8);
+    doc.setTextColor(...TEXT_MUTED);
+    doc.text(`Página ${i} de ${totalPages}`, W - MARGIN_X, fy + 22, { align: "right" });
+  }
 
   return doc;
 }

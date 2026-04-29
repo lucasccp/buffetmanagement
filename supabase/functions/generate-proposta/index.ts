@@ -226,7 +226,7 @@ Gere a proposta usando a função generate_proposta.`;
               properties: {
                 abertura: { type: "string", description: "Saudação personalizada e breve introdução (2-3 parágrafos)" },
                 descricao_evento: { type: "string", description: "Descrição do evento: tipo, número de convidados, data, local" },
-                cardapio: { type: "string", description: "Apresentação do cardápio com itens organizados e destaque de qualidade" },
+                cardapio: { type: "string", description: "Apresentação curta e elegante do cardápio em 1 parágrafo (2-4 frases). NÃO liste os pratos individualmente — eles serão exibidos automaticamente abaixo em formato de bullets. Foque em qualidade, cuidado na seleção dos ingredientes e na experiência gastronômica que será oferecida." },
                 servicos: { type: "string", description: "Serviços inclusos: equipe, estrutura, atendimento. OBRIGATÓRIO: incluir todos os itens da lista 'itens_inclusos' do contexto (copos de vidro, pratos de cerâmica, talheres de inox, rechaud, suqueiras de vidro, utensílios descartáveis, utensílios de inox) de forma organizada e valorizada" },
                 investimento: { type: "string", description: "Valor total, valor por pessoa. Apresentar como investimento, não custo" },
                 encerramento: { type: "string", description: "Reforço de valor e chamada para ação" },
