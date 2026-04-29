@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,9 +28,11 @@ type PropostaConteudo = {
 
 export default function PropostaNova() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const preselectedLeadId = searchParams.get("lead_id") ?? "";
   const [leadMode, setLeadMode] = useState<"existing" | "new">("existing");
   const [cardapioMode, setCardapioMode] = useState<"existing" | "new">("existing");
-  const [leadId, setLeadId] = useState("");
+  const [leadId, setLeadId] = useState(preselectedLeadId);
   const [cardapioId, setCardapioId] = useState("");
   const [tom, setTom] = useState("premium");
   const [newLead, setNewLead] = useState<Record<string, any>>({});
@@ -38,6 +40,15 @@ export default function PropostaNova() {
   const [conteudo, setConteudo] = useState<PropostaConteudo | null>(null);
   const [generating, setGenerating] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // If lead has a linked cardápio, preselect it
+  useEffect(() => {
+    if (!preselectedLeadId) return;
+    (async () => {
+      const { data } = await supabase.from("leads").select("cardapio_id").eq("id", preselectedLeadId).maybeSingle();
+      if (data?.cardapio_id) setCardapioId(data.cardapio_id);
+    })();
+  }, [preselectedLeadId]);
 
   const { data: leads = [] } = useQuery({
     queryKey: ["leads_select"],
