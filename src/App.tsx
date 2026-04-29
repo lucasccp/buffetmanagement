@@ -16,6 +16,10 @@ import Caixa from "./pages/Caixa";
 import Calendario from "./pages/Calendario";
 import Financeiro from "./pages/Financeiro";
 import Usuarios from "./pages/Usuarios";
+import Propostas from "./pages/Propostas";
+import PropostaNova from "./pages/PropostaNova";
+import PropostaDetail from "./pages/PropostaDetail";
+import Configuracoes from "./pages/Configuracoes";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "./components/ProtectedRoute";
 
@@ -42,6 +46,10 @@ const App = () => (
           <Route path="/calendario" element={<ProtectedRoute><Calendario /></ProtectedRoute>} />
           <Route path="/financeiro" element={<ProtectedRoute><Financeiro /></ProtectedRoute>} />
           <Route path="/usuarios" element={<ProtectedRoute><Usuarios /></ProtectedRoute>} />
+          <Route path="/propostas" element={<ProtectedRoute><Propostas /></ProtectedRoute>} />
+          <Route path="/propostas/nova" element={<ProtectedRoute><PropostaNova /></ProtectedRoute>} />
+          <Route path="/propostas/:id" element={<ProtectedRoute><PropostaDetail /></ProtectedRoute>} />
+          <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
