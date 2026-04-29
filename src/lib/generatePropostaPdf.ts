@@ -141,7 +141,51 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   doc.line(18, y, W - 18, y);
   y += 9;
 
-  // Helper to draw a section title + body
+  // Render a single line that may contain **bold** segments
+  const drawRichLine = (line: string, x: number, yPos: number) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter((s) => s.length > 0);
+    let cx = x;
+    parts.forEach((part) => {
+      const isBold = part.startsWith("**") && part.endsWith("**");
+      const text = isBold ? part.slice(2, -2) : part;
+      doc.setFont("helvetica", isBold ? "bold" : "normal");
+      doc.text(text, cx, yPos);
+      cx += doc.getTextWidth(text);
+    });
+  };
+
+  // Wrap text preserving **markers**: splits the original string into lines whose
+  // *visible* (marker-stripped) text matches the lengths produced by splitTextToSize.
+  const wrapPreservingMarkers = (original: string, cleanLines: string[]): string[] => {
+    // Walk the original char-by-char skipping ** markers; consume chars equal to each clean line length.
+    const out: string[] = [];
+    let i = 0;
+    for (const cleanLine of cleanLines) {
+      let consumed = 0;
+      let buf = "";
+      const target = cleanLine.length;
+      while (i < original.length && consumed < target) {
+        if (original[i] === "*" && original[i + 1] === "*") {
+          buf += "**";
+          i += 2;
+          continue;
+        }
+        buf += original[i];
+        i++;
+        consumed++;
+      }
+      // skip any whitespace that splitTextToSize trimmed between lines
+      while (i < original.length && (original[i] === " " || original[i] === "\n")) {
+        // include newlines as line breaks already handled by splitTextToSize; just skip
+        if (original[i] === "\n") { i++; break; }
+        i++;
+      }
+      out.push(buf);
+    }
+    return out;
+  };
+
+  // Helper to draw a section title + body (supports **bold** in body)
   const drawSection = (title: string, body: string) => {
     if (y > H - 60) { doc.addPage(); y = 25; }
     doc.setFont("helvetica", "bold");
@@ -149,19 +193,21 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     doc.setTextColor(...TEXT_DARK);
     doc.text(title.toUpperCase(), 18, y);
     y += 6;
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    const lines = doc.splitTextToSize(body || "—", W - 60);
-    lines.forEach((l: string) => {
+    doc.setFont("helvetica", "normal");
+    const cleaned = (body || "—").replace(/\*\*/g, "");
+    const cleanLines = doc.splitTextToSize(cleaned, W - 60);
+    const wrapped = wrapPreservingMarkers(body || "—", cleanLines);
+    wrapped.forEach((l: string) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
-      doc.text(l, 40, y);
+      drawRichLine(l, 40, y);
       y += 5;
     });
     y += 4;
   };
 
-  drawSection("Descrição do serviço", data.descricao_servico);
+  drawSection("Apresentação", data.descricao_servico);
 
   // CARDAPIO with itens
   if (y > H - 80) { doc.addPage(); y = 25; }
@@ -183,10 +229,12 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    const lines = doc.splitTextToSize(data.texto_cardapio, W - 60);
-    lines.forEach((l: string) => {
+    const cleaned = data.texto_cardapio.replace(/\*\*/g, "");
+    const cleanLines = doc.splitTextToSize(cleaned, W - 60);
+    const wrapped = wrapPreservingMarkers(data.texto_cardapio, cleanLines);
+    wrapped.forEach((l: string) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
-      doc.text(l, 40, y);
+      drawRichLine(l, 40, y);
       y += 5;
     });
     y += 2;
