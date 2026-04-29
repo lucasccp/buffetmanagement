@@ -1,42 +1,66 @@
-## Problemas observados no PDF
+# Remodelar criação de cardápio com categorias
 
-1. **Cardápio duplicado**: a IA gera no campo `cardapio` um parágrafo que já lista/menciona os pratos, e logo abaixo o gerador imprime os mesmos pratos como bullets vindos de `cardapio_itens`. O leitor vê duas vezes.
-2. **Falta de respiro entre títulos e conteúdo**: o título da seção fica colado ao primeiro parágrafo (apenas `y += 6` após o título com fonte 11), dando aparência apertada.
+## Objetivo
+Tornar a criação e edição de cardápios mais intuitiva, com categoria por item (texto livre) e fluxo simples para adicionar vários itens rapidamente. Itens ficam agrupados visualmente pela categoria informada.
 
-## Solução
+## Mudanças no banco
+Adicionar coluna `categoria` (text, nullable) em `cardapio_itens`. Itens existentes ficam sem categoria (exibidos como "Sem categoria").
 
-### 1. Eliminar duplicação do cardápio
+## Novo fluxo do formulário "Novo Cardápio"
 
-Ajustar o **prompt da IA** (`supabase/functions/generate-proposta/index.ts`) para que o campo `cardapio` seja apenas uma **apresentação curta** (1 parágrafo, tom comercial — ex.: "Preparamos um cardápio cuidadosamente selecionado, pensado para encantar seus convidados…"), **sem listar pratos**. A lista de pratos fica exclusivamente nos bullets reais vindos do banco.
+Cabeçalho do cardápio (campos no topo):
+- Nome do cardápio *
+- Valor por pessoa (R$)
 
-Atualizar a `description` do parâmetro `cardapio` no schema da function-call:
-> "Apresentação curta e elegante do cardápio em 1 parágrafo (2-4 frases). NÃO liste os pratos — eles serão exibidos automaticamente abaixo em formato de bullets. Foque em qualidade, cuidado na seleção e experiência."
+Bloco de itens, organizado por categoria:
+- O usuário digita o nome da categoria (ex: "Entradas", "Bebidas") e clica em "+ Adicionar categoria".
+- Dentro de cada categoria aparece uma lista de inputs de itens com botão "+ Adicionar item" embaixo.
+- Cada linha de item tem: nome do item + botão remover (lixeira).
+- Tecla Enter no input de item adiciona automaticamente uma nova linha vazia (atalho rápido).
+- Categorias podem ser renomeadas e removidas (a remoção da categoria pede confirmação e remove os itens dentro).
+- Categorias podem ser reordenadas via setas ↑ ↓ (opcional, simples).
+- Uma categoria padrão "Geral" é criada automaticamente para acelerar o uso.
 
-### 2. Layout: respiro entre títulos e conteúdo
+Layout (mobile-first, glassmorphism existente):
 
-No `src/lib/generatePropostaPdf.ts`:
+```text
+┌─ Novo Cardápio ────────────────────┐
+│ Nome *           Valor/pessoa      │
+│ [__________]     [R$ ___]          │
+│                                    │
+│ Itens do cardápio                  │
+│ ┌─ Entradas              [↑][↓][×]┐│
+│ │ • [Bruschetta________]      [🗑]││
+│ │ • [Carpaccio_________]      [🗑]││
+│ │ [+ Adicionar item]              ││
+│ └─────────────────────────────────┘│
+│ ┌─ Pratos principais     [↑][↓][×]┐│
+│ │ • [Risoto____________]      [🗑]││
+│ │ [+ Adicionar item]              ││
+│ └─────────────────────────────────┘│
+│ [+ Adicionar categoria]            │
+│                                    │
+│ [Cancelar]            [Cadastrar]  │
+└────────────────────────────────────┘
+```
 
-- Aumentar o espaço entre o **título** da seção e o **corpo**: passar de `y += 6` para `y += 9` após o título.
-- Aumentar o espaço **antes** de cada nova seção (espaço final): de `y += 4` para `y += 7`.
-- Aplicar a mesma regra na seção CARDÁPIO (que tem renderização customizada).
-- Adicionar uma fina linha-acento (3 mm em cor de destaque) abaixo de cada título, criando hierarquia visual clara (opcional, mas alinhado ao estilo bege/elegante atual).
+## Edição de cardápio
+O `EditCardapioDialog` recebe a mesma interface, pré-populando categorias a partir dos itens existentes (agrupando por `categoria`). Itens sem categoria aparecem em "Sem categoria" e podem ser movidos.
 
-### 3. Outras melhorias de UX recomendadas
+## Visualização (modal "Ver")
+A visualização passa a mostrar itens agrupados por categoria com badges, mantendo o estilo atual.
 
-a. **Indentação consistente**: hoje o corpo dos parágrafos começa em `x=40`, enquanto bullets do cardápio começam em `x=42` e o título em `x=18`. Vou alinhar título em `x=18` e corpo+bullets em `x=22` (margem de 4mm em vez de 22mm), aproveitando melhor a largura da página e ficando menos "deslocado".
+## Importação por PDF
+Sem mudanças funcionais — o parser já retorna categorias; agora a `categoria` será persistida em `cardapio_itens.categoria` em vez de ser descartada no insert.
 
-b. **Largura útil maior**: aumentar `maxWidth` do wrap de `W - 60` para `W - 40`, reduzindo quebras desnecessárias e densidade visual.
+## Geração de PDFs
+Sem mudanças nesta entrega. O PDF continua listando os itens (já deduplicados). Posso, em uma próxima iteração, exibir os itens agrupados por categoria no PDF, se quiser.
 
-c. **Numeração de páginas** no rodapé (canto direito, fonte 8, cinza): "Página X de Y" — útil em propostas de várias páginas.
-
-d. **Quebra de página inteligente**: hoje o gerador checa `y > H - 60` apenas no início da seção, mas títulos podem ficar "órfãos" no fim de uma página com o corpo na próxima. Adicionar uma checagem que garante pelo menos ~20mm de espaço após o título antes de aceitar desenhar nele; senão, força nova página.
-
-e. **Espaço entre seção CARDÁPIO e tabela de Investimento**: hoje a tabela aparece logo após o texto de Investimento sem título dedicado claro. Adicionar um pequeno cabeçalho "Resumo do Investimento" antes da tabela e respiro de 3-4mm entre o texto da IA e a tabela.
-
-f. **Rodapé**: hoje o rodapé é desenhado apenas na **última** página (após todas as seções). Em PDFs de várias páginas, as páginas intermediárias ficam sem rodapé/identidade visual. Solução: ao final, percorrer todas as páginas e desenhar header/footer reduzido em cada uma (ou ao menos um rodapé minimalista com nome da empresa + número da página).
-
-g. **Cor do corpo**: hoje usa `(60,60,60)` que é quase preto. Suavizar para `(70,70,70)` mantém legibilidade e diferencia visualmente do título.
-
-## Perguntas
-
-Antes de mexer no código preciso confirmar duas decisões:
+## Detalhes técnicos
+- Migration: `ALTER TABLE public.cardapio_itens ADD COLUMN categoria text;`
+- `src/pages/Cardapio.tsx`: substituir o formulário `Novo Cardápio` pelo novo componente `CardapioFormFields` com estrutura `{ categoria: string, itens: { nome: string }[] }[]`. No submit, achatar para inserts em `cardapio_itens` incluindo `categoria`.
+- `src/components/EditCardapioDialog.tsx`: usar o mesmo `CardapioFormFields`. No salvar: diff entre itens originais e novos via `id` (mantém update/delete/insert atual) e atualiza/insere `categoria`.
+- Novo componente reutilizável `src/components/CardapioFormFields.tsx` com a UI de categorias + itens, validação leve (nome obrigatório por categoria, itens vazios são ignorados no submit).
+- Modal "Ver cardápio" em `Cardapio.tsx`: agrupar `cardapio_itens` por `categoria` e renderizar uma seção por grupo.
+- `ImportCardapioDialog.tsx`: passar `categoria: item.categoria` (vindo do parser, hoje implícito pelo nome da categoria pai) no insert dos itens.
+- Acessibilidade: inputs com labels, botões com `aria-label`, alvo de toque ≥ 40px no mobile.
