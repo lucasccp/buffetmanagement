@@ -273,7 +273,9 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
     mutationFn: async () => {
       if (!parsed) return;
 
-      const allItems = parsed.categorias.flatMap((category) => category.itens);
+      const allItems = parsed.categorias.flatMap((category) =>
+        category.itens.map((item) => ({ ...item, categoria: category.nome })),
+      );
       const { data, error } = await supabase
         .from("cardapios")
         .insert({ nome: cardapioName || parsed.nome_cardapio, valor_sugerido_pp: 0 })
@@ -285,7 +287,7 @@ export function ImportCardapioDialog({ open, onOpenChange }: Props) {
       if (allItems.length > 0) {
         const { error: insertError } = await supabase
           .from("cardapio_itens")
-          .insert(allItems.map((item) => ({ cardapio_id: data.id, nome: item.nome })));
+          .insert(allItems.map((item) => ({ cardapio_id: data.id, nome: item.nome, categoria: item.categoria })));
 
         if (insertError) throw insertError;
       }
