@@ -62,6 +62,55 @@ function fmtDate(d: string | null): string {
   return m ? `${m[3]}/${m[2]}/${m[1]}` : d;
 }
 
+function normalizeText(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function uniqueMenuItems(items: string[]): string[] {
+  const seen = new Set<string>();
+  return items
+    .map((item) => item?.trim())
+    .filter((item): item is string => Boolean(item))
+    .filter((item) => {
+      const key = normalizeText(item);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function sanitizeCardapioIntro(body: string, menuItems: string[]): string {
+  const fallback = "O cardápio selecionado foi pensado para oferecer uma experiência gastronômica equilibrada, elegante e adequada ao perfil do evento.";
+  const trimmed = body?.trim();
+  if (!trimmed) return fallback;
+
+  const normalizedItems = menuItems.map(normalizeText).filter((item) => item.length >= 4);
+  if (!normalizedItems.length) return trimmed;
+
+  const normalizedBody = normalizeText(trimmed);
+  const mentionedCount = normalizedItems.filter((item) => normalizedBody.includes(item)).length;
+  if (mentionedCount >= 2 || mentionedCount / normalizedItems.length >= 0.35) return fallback;
+
+  const cleanedLines = trimmed
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter((line) => {
+      const normalizedLine = normalizeText(line);
+      const mentionsItem = normalizedItems.some((item) => normalizedLine.includes(item));
+      const looksLikeList = /^[•\-*–—]|^\d+[.)]/.test(line);
+      return !(mentionsItem && looksLikeList);
+    });
+
+  const cleaned = cleanedLines.join("\n").trim();
+  return cleaned.length >= 40 ? cleaned : fallback;
+}
+
 async function loadImageDataUrl(url: string): Promise<string | null> {
   try {
     const res = await fetch(url);
@@ -92,6 +141,8 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   const W = 210;
   const H = 297;
   const accent = hexToRgb(empresa.cor_destaque);
+  const cardapioItens = uniqueMenuItems(data.cardapio_itens ?? []);
+  const cardapioIntro = sanitizeCardapioIntro(data.cardapio, cardapioItens);
 
   // ─────────── HEADER (página 1) ───────────
   const headerH = 50;
@@ -281,16 +332,16 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     y += 6;
   }
 
-  if (data.cardapio) {
-    drawBody(data.cardapio);
+  if (cardapioIntro) {
+    drawBody(cardapioIntro);
     y += 2;
   }
 
-  if (data.cardapio_itens.length) {
+  if (cardapioItens.length) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(...TEXT_BODY);
-    data.cardapio_itens.forEach((item) => {
+    cardapioItens.forEach((item) => {
       ensureSpace(6);
       doc.text(`•  ${item}`, BULLET_X, y);
       y += 4.8;
@@ -383,7 +434,7 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   if (data.encerramento) drawSection("Encerramento", data.encerramento);
 
   // ─────────── FOOTER em TODAS as páginas ───────────
-  const totalPages = (doc as any).internal.getNumberOfPages();
+  const totalPages = (doc.internal as unknown as { getNumberOfPages: () => number }).getNumberOfPages();
   for (let i = 1; i <= totalPages; i++) {
     doc.setPage(i);
     const fy = H - FOOTER_H;
