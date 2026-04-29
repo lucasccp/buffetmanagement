@@ -212,9 +212,13 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     y += 4;
   };
 
-  drawSection("Apresentação", data.descricao_servico);
+  // 1. ABERTURA
+  drawSection("Abertura", data.abertura);
 
-  // CARDAPIO with itens
+  // 2. DESCRIÇÃO DO EVENTO
+  drawSection("Descrição do Evento", data.descricao_evento);
+
+  // 3. CARDÁPIO (nome + texto da IA + bullets)
   if (y > H - 80) { doc.addPage(); y = 25; }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -230,13 +234,13 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     y += 5;
   }
 
-  if (data.texto_cardapio) {
+  if (data.cardapio) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    const cleaned = data.texto_cardapio.replace(/\*\*/g, "");
+    const cleaned = data.cardapio.replace(/\*\*/g, "");
     const cleanLines = doc.splitTextToSize(cleaned, W - 60);
-    const wrapped = wrapPreservingMarkers(data.texto_cardapio, cleanLines);
+    const wrapped = wrapPreservingMarkers(data.cardapio, cleanLines);
     wrapped.forEach((l: string) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
       drawRichLine(l, 40, y);
@@ -256,6 +260,12 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     });
     y += 4;
   }
+
+  // 4. SERVIÇOS
+  drawSection("Serviços", data.servicos);
+
+  // 5. INVESTIMENTO (texto + tabela)
+  if (data.investimento) drawSection("Investimento", data.investimento);
 
   // ─────────── TABLE ───────────
   if (y > H - 60) { doc.addPage(); y = 25; }
