@@ -9,10 +9,15 @@ export interface PropostaPdfData {
   valor_total: number;
   cardapio_nome: string;
   cardapio_itens: string[];
-  descricao_servico: string;
-  texto_cardapio: string;
-  observacoes: string;
+  // 8 seções da proposta
+  abertura: string;
+  descricao_evento: string;
+  cardapio: string;
+  servicos: string;
+  investimento: string;
   forma_pagamento: string;
+  observacoes_finais: string;
+  encerramento: string;
 }
 
 export interface PropostaEmpresa {
@@ -141,48 +146,80 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   doc.line(18, y, W - 18, y);
   y += 9;
 
-  // Render a single line that may contain **bold** segments
-  const drawRichLine = (line: string, x: number, yPos: number) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter((s) => s.length > 0);
-    let cx = x;
-    parts.forEach((part) => {
-      const isBold = part.startsWith("**") && part.endsWith("**");
-      const text = isBold ? part.slice(2, -2) : part;
-      doc.setFont("helvetica", isBold ? "bold" : "normal");
-      doc.text(text, cx, yPos);
-      cx += doc.getTextWidth(text);
-    });
-  };
-
-  // Wrap text preserving **markers**: splits the original string into lines whose
-  // *visible* (marker-stripped) text matches the lengths produced by splitTextToSize.
-  const wrapPreservingMarkers = (original: string, cleanLines: string[]): string[] => {
-    // Walk the original char-by-char skipping ** markers; consume chars equal to each clean line length.
-    const out: string[] = [];
-    let i = 0;
-    for (const cleanLine of cleanLines) {
-      let consumed = 0;
-      let buf = "";
-      const target = cleanLine.length;
-      while (i < original.length && consumed < target) {
-        if (original[i] === "*" && original[i + 1] === "*") {
-          buf += "**";
-          i += 2;
-          continue;
-        }
-        buf += original[i];
-        i++;
-        consumed++;
-      }
-      // skip any whitespace that splitTextToSize trimmed between lines
-      while (i < original.length && (original[i] === " " || original[i] === "\n")) {
-        // include newlines as line breaks already handled by splitTextToSize; just skip
-        if (original[i] === "\n") { i++; break; }
-        i++;
-      }
-      out.push(buf);
+  // Tokenize a string with **bold** markers into segments
+  type Segment = { text: string; bold: boolean };
+  const tokenize = (s: string): Segment[] => {
+    const out: Segment[] = [];
+    const parts = s.split(/(\*\*[^*]+\*\*)/g);
+    for (const p of parts) {
+      if (!p) continue;
+      if (p.startsWith("**") && p.endsWith("**")) out.push({ text: p.slice(2, -2), bold: true });
+      else out.push({ text: p, bold: false });
     }
     return out;
+  };
+
+  // Word-wrap segments into lines that fit `maxWidth`. Returns array of lines (each = Segment[]).
+  const wrapSegments = (segments: Segment[], maxWidth: number, fontSize: number): Segment[][] => {
+    doc.setFontSize(fontSize);
+    const lines: Segment[][] = [];
+    let current: Segment[] = [];
+    let currentWidth = 0;
+
+    const measure = (text: string, bold: boolean) => {
+      doc.setFont("helvetica", bold ? "bold" : "normal");
+      return doc.getTextWidth(text);
+    };
+
+    const pushWord = (word: string, bold: boolean, leadingSpace: boolean) => {
+      const piece = (leadingSpace ? " " : "") + word;
+      const w = measure(piece, bold);
+      if (currentWidth + w > maxWidth && current.length > 0) {
+        lines.push(current);
+        current = [];
+        currentWidth = 0;
+        const w2 = measure(word, bold);
+        current.push({ text: word, bold });
+        currentWidth = w2;
+      } else {
+        current.push({ text: piece, bold });
+        currentWidth += w;
+      }
+    };
+
+    let firstWordOfLine = true;
+    for (const seg of segments) {
+      // Split on newlines first
+      const blocks = seg.text.split("\n");
+      blocks.forEach((block, bi) => {
+        if (bi > 0) {
+          // forced line break
+          lines.push(current);
+          current = [];
+          currentWidth = 0;
+          firstWordOfLine = true;
+        }
+        // split block into words preserving spacing logic
+        const words = block.split(/\s+/).filter((w) => w.length > 0);
+        const startsWithSpace = /^\s/.test(block);
+        if (startsWithSpace && current.length > 0) firstWordOfLine = false;
+        words.forEach((word) => {
+          pushWord(word, seg.bold, !firstWordOfLine);
+          firstWordOfLine = false;
+        });
+      });
+    }
+    if (current.length > 0) lines.push(current);
+    return lines;
+  };
+
+  const drawSegmentLine = (line: Segment[], x: number, yPos: number) => {
+    let cx = x;
+    for (const seg of line) {
+      doc.setFont("helvetica", seg.bold ? "bold" : "normal");
+      doc.text(seg.text, cx, yPos);
+      cx += doc.getTextWidth(seg.text);
+    }
   };
 
   // Helper to draw a section title + body (supports **bold** in body)
@@ -195,21 +232,23 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     y += 6;
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    doc.setFont("helvetica", "normal");
-    const cleaned = (body || "—").replace(/\*\*/g, "");
-    const cleanLines = doc.splitTextToSize(cleaned, W - 60);
-    const wrapped = wrapPreservingMarkers(body || "—", cleanLines);
-    wrapped.forEach((l: string) => {
+    const segments = tokenize(body || "—");
+    const wrapped = wrapSegments(segments, W - 60, 10);
+    wrapped.forEach((line) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
-      drawRichLine(l, 40, y);
+      drawSegmentLine(line, 40, y);
       y += 5;
     });
     y += 4;
   };
 
-  drawSection("Apresentação", data.descricao_servico);
+  // 1. ABERTURA
+  drawSection("Abertura", data.abertura);
 
-  // CARDAPIO with itens
+  // 2. DESCRIÇÃO DO EVENTO
+  drawSection("Descrição do Evento", data.descricao_evento);
+
+  // 3. CARDÁPIO (nome + texto da IA + bullets)
   if (y > H - 80) { doc.addPage(); y = 25; }
   doc.setFont("helvetica", "bold");
   doc.setFontSize(11);
@@ -225,16 +264,14 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     y += 5;
   }
 
-  if (data.texto_cardapio) {
-    doc.setFont("helvetica", "normal");
+  if (data.cardapio) {
     doc.setFontSize(10);
     doc.setTextColor(60, 60, 60);
-    const cleaned = data.texto_cardapio.replace(/\*\*/g, "");
-    const cleanLines = doc.splitTextToSize(cleaned, W - 60);
-    const wrapped = wrapPreservingMarkers(data.texto_cardapio, cleanLines);
-    wrapped.forEach((l: string) => {
+    const segs = tokenize(data.cardapio);
+    const wrapped = wrapSegments(segs, W - 60, 10);
+    wrapped.forEach((line) => {
       if (y > H - 40) { doc.addPage(); y = 25; }
-      drawRichLine(l, 40, y);
+      drawSegmentLine(line, 40, y);
       y += 5;
     });
     y += 2;
@@ -251,6 +288,12 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     });
     y += 4;
   }
+
+  // 4. SERVIÇOS
+  drawSection("Serviços", data.servicos);
+
+  // 5. INVESTIMENTO (texto + tabela)
+  if (data.investimento) drawSection("Investimento", data.investimento);
 
   // ─────────── TABLE ───────────
   if (y > H - 60) { doc.addPage(); y = 25; }
@@ -317,9 +360,12 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
 
   y += rowH + 10;
 
-  // OBSERVATIONS
-  if (data.observacoes) drawSection("Observações", data.observacoes);
-  if (data.forma_pagamento) drawSection("Forma de pagamento", data.forma_pagamento);
+  // 6. FORMA DE PAGAMENTO
+  if (data.forma_pagamento) drawSection("Forma de Pagamento", data.forma_pagamento);
+  // 7. OBSERVAÇÕES FINAIS
+  if (data.observacoes_finais) drawSection("Observações Finais", data.observacoes_finais);
+  // 8. ENCERRAMENTO
+  if (data.encerramento) drawSection("Encerramento", data.encerramento);
 
   // ─────────── FOOTER ───────────
   const footerH = 30;
