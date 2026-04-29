@@ -266,145 +266,69 @@ function LeadInfoCard({ lead, cardapios, editing, onEdit, onSave, onCancel }: {
   );
 }
 
-// ─── PROPOSTA TAB ────────────────────────────────────────────
-type PropostaData = {
-  abertura: string;
-  descricao_evento: string;
-  cardapio: string;
-  servicos: string;
-  investimento: string;
-  encerramento: string;
-};
-
+// ─── PROPOSTAS DO LEAD ───────────────────────────────────────
 function PropostaTab({ leadId }: { leadId: string }) {
-  const [tom, setTom] = useState("premium");
-  const [proposta, setProposta] = useState<PropostaData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [editing, setEditing] = useState(false);
-  const [editText, setEditText] = useState("");
-
-  const propostaToText = (p: PropostaData) =>
-    [p.abertura, p.descricao_evento, p.cardapio, p.servicos, p.investimento, p.encerramento].join("\n\n---\n\n");
-
-  const handleGenerate = async () => {
-    setLoading(true);
-    setProposta(null);
-    setEditing(false);
-    try {
-      const { data, error } = await supabase.functions.invoke("generate-proposta", {
-        body: { lead_id: leadId, tom },
-      });
+  const navigate = useNavigate();
+  const { data: propostas = [] } = useQuery({
+    queryKey: ["propostas_lead", leadId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("propostas" as any)
+        .select("id, created_at, status, valor_total, tom")
+        .eq("lead_id", leadId)
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      setProposta(data.proposta);
-      setEditText(propostaToText(data.proposta));
-    } catch (e: any) {
-      toast.error(e.message || "Erro ao gerar proposta");
-    } finally {
-      setLoading(false);
-    }
-  };
+      return (data ?? []) as any[];
+    },
+  });
 
-  const handleCopy = async () => {
-    const text = editing ? editText : proposta ? propostaToText(proposta) : "";
-    await navigator.clipboard.writeText(text);
-    toast.success("Proposta copiada!");
-  };
-
-  const handleEdit = () => {
-    if (proposta) setEditText(propostaToText(proposta));
-    setEditing(true);
-  };
-
-  const sectionLabels: Record<keyof PropostaData, string> = {
-    abertura: "Abertura",
-    descricao_evento: "Descrição do Evento",
-    cardapio: "Cardápio",
-    servicos: "Serviços Inclusos",
-    investimento: "Investimento",
-    encerramento: "Encerramento",
+  const propostaStatusColors: Record<string, string> = {
+    enviada: "bg-info/10 text-info border-info/20",
+    aceita: "bg-success/10 text-success border-success/20",
+    convertida: "bg-primary/10 text-primary border-primary/20",
+    recusada: "bg-destructive/10 text-destructive border-destructive/20",
   };
 
   return (
     <Card>
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-3 flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2 text-sm font-medium">
-          <Sparkles className="h-4 w-4 text-primary" />
-          Proposta Comercial com IA
+          <FileText className="h-4 w-4 text-primary" />
+          Propostas
         </CardTitle>
+        <Button size="sm" onClick={() => navigate(`/propostas/nova?lead_id=${leadId}`)}>
+          <Plus className="h-3.5 w-3.5 mr-1.5" />Nova proposta
+        </Button>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <Label className="text-xs font-medium">Tom da proposta</Label>
-          <RadioGroup value={tom} onValueChange={setTom} className="flex gap-4">
-            {[
-              { value: "premium", label: "Premium" },
-              { value: "simples", label: "Simples" },
-              { value: "direto", label: "Direto" },
-            ].map((opt) => (
-              <div key={opt.value} className="flex items-center space-x-1.5">
-                <RadioGroupItem value={opt.value} id={`tom-${opt.value}`} />
-                <Label htmlFor={`tom-${opt.value}`} className="text-xs cursor-pointer">{opt.label}</Label>
-              </div>
-            ))}
-          </RadioGroup>
-        </div>
-
-        <div className="flex gap-2 flex-wrap">
-          <Button size="sm" onClick={handleGenerate} disabled={loading}>
-            {loading ? (
-              <><RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />Gerando...</>
-            ) : proposta ? (
-              <><RefreshCw className="h-3.5 w-3.5 mr-1.5" />Regenerar</>
-            ) : (
-              <><Sparkles className="h-3.5 w-3.5 mr-1.5" />Gerar Proposta com IA</>
-            )}
-          </Button>
-          {proposta && !loading && (
-            <>
-              <Button size="sm" variant="outline" onClick={handleEdit} disabled={editing} className="text-xs">
-                <Pencil className="h-3.5 w-3.5 mr-1" />Editar
-              </Button>
-              <Button size="sm" variant="outline" onClick={handleCopy} className="text-xs">
-                <Copy className="h-3.5 w-3.5 mr-1" />Copiar
-              </Button>
-            </>
-          )}
-        </div>
-
-        {loading && (
-          <div className="flex justify-center py-8">
-            <div className="flex flex-col items-center gap-3 text-muted-foreground">
-              <RefreshCw className="h-6 w-6 animate-spin" />
-              <p className="text-sm">Gerando proposta personalizada...</p>
-            </div>
-          </div>
-        )}
-
-        {!loading && editing && (
-          <Textarea value={editText} onChange={(e) => setEditText(e.target.value)} rows={20} className="text-sm font-mono" />
-        )}
-
-        {!loading && !editing && proposta && (
-          <div className="space-y-4">
-            {(Object.keys(sectionLabels) as (keyof PropostaData)[]).map((key) => (
-              <div key={key} className="space-y-1">
-                <h3 className="text-xs font-semibold text-primary uppercase tracking-wider">{sectionLabels[key]}</h3>
-                <div className="text-sm text-foreground whitespace-pre-wrap leading-relaxed rounded-md bg-muted/50 p-3">
-                  {proposta[key]}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {!loading && !proposta && (
+      <CardContent>
+        {propostas.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
-            <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">Clique em "Gerar Proposta com IA" para criar uma proposta personalizada</p>
+            <FileText className="h-8 w-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm">Nenhuma proposta gerada ainda.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {propostas.map((p) => (
+              <div key={p.id} className="flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/30 transition-colors">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-sm font-medium">{formatDate(p.created_at)}</span>
+                    <Badge variant="outline" className={propostaStatusColors[p.status] ?? ""}>{p.status}</Badge>
+                    <span className="text-xs text-muted-foreground capitalize">{p.tom}</span>
+                  </div>
+                  {p.valor_total != null && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{formatCurrency(Number(p.valor_total))}</p>
+                  )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate(`/propostas/${p.id}`)}>
+                  <Eye className="h-3.5 w-3.5 mr-1" />Abrir
+                </Button>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
     </Card>
   );
 }
+
