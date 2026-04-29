@@ -140,6 +140,48 @@ export type Database = {
           },
         ]
       }
+      empresa_config: {
+        Row: {
+          cnpj: string | null
+          cor_destaque: string | null
+          created_at: string
+          email: string | null
+          endereco: string | null
+          forma_pagamento_padrao: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          telefone: string | null
+          updated_at: string
+        }
+        Insert: {
+          cnpj?: string | null
+          cor_destaque?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          forma_pagamento_padrao?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          cnpj?: string | null
+          cor_destaque?: string | null
+          created_at?: string
+          email?: string | null
+          endereco?: string | null
+          forma_pagamento_padrao?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          telefone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       equipe: {
         Row: {
           custo_por_evento: number | null
@@ -483,6 +525,82 @@ export type Database = {
         }
         Relationships: []
       }
+      propostas: {
+        Row: {
+          cardapio_id: string | null
+          conteudo: Json
+          created_at: string
+          evento_id: string | null
+          forma_pagamento: string | null
+          id: string
+          lead_id: string
+          numero_convidados: number | null
+          observacoes: string | null
+          pdf_url: string | null
+          status: Database["public"]["Enums"]["proposta_status"]
+          tom: string
+          updated_at: string
+          valor_por_pessoa: number | null
+          valor_total: number | null
+        }
+        Insert: {
+          cardapio_id?: string | null
+          conteudo?: Json
+          created_at?: string
+          evento_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          lead_id: string
+          numero_convidados?: number | null
+          observacoes?: string | null
+          pdf_url?: string | null
+          status?: Database["public"]["Enums"]["proposta_status"]
+          tom?: string
+          updated_at?: string
+          valor_por_pessoa?: number | null
+          valor_total?: number | null
+        }
+        Update: {
+          cardapio_id?: string | null
+          conteudo?: Json
+          created_at?: string
+          evento_id?: string | null
+          forma_pagamento?: string | null
+          id?: string
+          lead_id?: string
+          numero_convidados?: number | null
+          observacoes?: string | null
+          pdf_url?: string | null
+          status?: Database["public"]["Enums"]["proposta_status"]
+          tom?: string
+          updated_at?: string
+          valor_por_pessoa?: number | null
+          valor_total?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "propostas_cardapio_id_fkey"
+            columns: ["cardapio_id"]
+            isOneToOne: false
+            referencedRelation: "cardapios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_evento_id_fkey"
+            columns: ["evento_id"]
+            isOneToOne: false
+            referencedRelation: "eventos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "propostas_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
@@ -701,6 +819,7 @@ export type Database = {
         | "novo"
         | "contato_realizado"
         | "proposta_enviada"
+        | "aceita"
         | "fechado"
         | "perdido"
       metodo_pagamento:
@@ -715,6 +834,7 @@ export type Database = {
       pagamento_evento_status: "planejado" | "pago"
       pagamento_status: "pendente" | "parcial" | "pago"
       parcela_status: "pendente" | "pago" | "atrasado"
+      proposta_status: "enviada" | "aceita" | "convertida" | "cancelada"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -856,6 +976,7 @@ export const Constants = {
         "novo",
         "contato_realizado",
         "proposta_enviada",
+        "aceita",
         "fechado",
         "perdido",
       ],
@@ -872,6 +993,7 @@ export const Constants = {
       pagamento_evento_status: ["planejado", "pago"],
       pagamento_status: ["pendente", "parcial", "pago"],
       parcela_status: ["pendente", "pago", "atrasado"],
+      proposta_status: ["enviada", "aceita", "convertida", "cancelada"],
     },
   },
 } as const
