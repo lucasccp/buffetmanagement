@@ -1,75 +1,124 @@
-## Melhorias de Interface e Usabilidade
+## Módulo Propostas + PDF inspirado no modelo
 
-Análise focada em UI/UX após revisão das páginas (`AppLayout`, `Dashboard`, `Caixa`, `Eventos`, `EventoDetail`).
+### Visão geral
 
----
+- **Novo item "Propostas"** no menu lateral (entre Leads e Eventos).
+- A aba "Proposta" sai de dentro do evento — vira fluxo independente.
+- Ao criar uma proposta o usuário pode:
+  - Escolher um **lead existente** ou **criar um novo lead** ali mesmo.
+  - Escolher um **cardápio existente** ou **criar um novo cardápio** ali mesmo.
+- Geração com IA, edição inline, **e download de PDF no novo layout** (modelo enviado).
+- **Salva no banco apenas quando o PDF é gerado**.
+- **Status do lead muda automaticamente**: gerar PDF → `proposta_enviada`; aceitar → novo status `aceita`; converter em evento → `fechado`.
+- **Configurações da empresa** (nome, telefone, endereço, logo) tornam-se editáveis em uma nova tela e alimentam o cabeçalho/rodapé do PDF.
 
-### Pontos fortes identificados (manter)
+### Status dos leads
 
-- Design system consistente com tokens HSL e tema claro/escuro funcionais
-- Cores semânticas, tipografia minimalista, paleta lilás/rosa coerente
-- React Query bem usado, animação `fade-in` no main
+Adicionamos somente `aceita`. Os 5 atuais ficam preservados:
+`novo` → `contato_realizado` → `proposta_enviada` → `aceita` → `fechado` (`perdido` em paralelo).
 
-### Pontos fracos identificados
+### Fluxo do usuário
 
-1. **Sidebar não colapsável no desktop** — ocupa 240px fixos mesmo quando o usuário quer mais espaço para tabelas/gráficos
-2. **Header sem identidade no desktop** — só mostra botão de tema; sem breadcrumb, sem nome da página, sem ações rápidas
-3. **Sem busca global** — para encontrar um evento/lead específico, precisa abrir a lista e rolar
-4. **Tabelas sem busca/ordenação** — `Eventos`, `Leads`, `Equipe` não filtram nem ordenam por coluna
-5. **Sem skeleton loaders** — telas piscam vazio enquanto carregam (especialmente Dashboard com 4 queries)
-6. **Sem confirmação visual de modo offline / erro de rede** — falhas de query ficam silenciosas
-7. **Modais de criação muito densos** — `Eventos` "Novo Evento" tem 10 campos empilhados sem agrupamento visual
-8. **Empty states genéricos** — "Nenhum evento encontrado" sem CTA para criar
-9. **Mobile**: KPIs do Dashboard quebram em coluna única ocupando muita altura; filtros do Caixa empilham mal
-10. **Sem atalhos de teclado** (ex: `Ctrl+K` busca, `N` novo evento)
-11. **Sem indicador "última atualização"** nos dashboards — usuário não sabe se dados estão frescos
-12. **Falta feedback ao clicar nos KPIs** — cards parecem clicáveis mas não fazem nada
+```text
+Propostas (lista)
+       │
+       ▼  [+ Nova Proposta]
+┌───────────────────────────────────┐
+│ 1. Lead    ◯ existente │ ◯ novo   │
+│ 2. Cardápio ◯ existente │ ◯ novo  │
+│ 3. Tom (premium / simples / ...)  │
+└───────────────────────────────────┘
+       │
+       ▼  [Gerar com IA] → preview editável
+       ▼
+[Baixar PDF] ── salva proposta no banco
+            ── salva PDF no Storage
+            ── lead.status = 'proposta_enviada'
+```
 
----
+### Layout do PDF (baseado no modelo)
 
-### Plano de execução proposto
+```text
+┌───────────────────────────────────────────────────────┐
+│ ▓▓▓ bege/creme com listras decorativas      [LOGO]    │  ← header
+│ Proposta de orçamento                                 │
+├───────────────────────────────────────────────────────┤
+│ CLIENTE: <nome>      DATA EVENTO: <data>              │
+│ LOCAL DO EVENTO: <endereço>                           │
+├───────────────────────────────────────────────────────┤
+│ DESCRIÇÃO DO SERVIÇO   <abertura + descrição IA>      │
+│ CARDÁPIO               <itens do cardápio + texto IA> │
+│                                                       │
+│ ┌─────────────────┬───────────┬─────────┬──────────┐  │
+│ │ SERVIÇOS        │ CONVIDADOS│ VALOR/PP│ TOTAL    │  │
+│ ├─────────────────┼───────────┼─────────┼──────────┤  │
+│ │ <nome cardápio> │  <n>      │ <pp>    │ <total>  │  │
+│ └─────────────────┴───────────┴─────────┴──────────┘  │
+│                                                       │
+│ OBSERVAÇÕES        <texto IA>                         │
+│ FORMA DE PAGAMENTO <texto IA / fixo>                  │
+├───────────────────────────────────────────────────────┤
+│ ▓▓▓ [LOGO/Marca]            (tel) - endereço empresa  │  ← footer
+└───────────────────────────────────────────────────────┘
+```
 
-**Fase A — Layout e navegação (alto impacto)**
-1. Migrar sidebar atual para `shadcn Sidebar` com `collapsible="icon"` (modo "mini" 56px só com ícones)
-2. Adicionar `SidebarTrigger` no header (sempre visível no desktop)
-3. Header passa a mostrar **título da página atual** dinâmico (ex: "Dashboard / Eventos / Caixa")
-4. Persistir estado colapsado/expandido no `localStorage`
+- **Paleta**: bege/creme `#EFE9DD` para faixas de header/footer, amarelo `#F4B942` para destaques (matches do modelo), preto/cinza para texto.
+- **Tipografia**: serif elegante para o título "Proposta de orçamento" e nome da marca; sans-serif (Helvetica) para o restante.
+- **Tabela**: cabeçalho em bege claro, linhas com bordas finas, alinhamento central nas colunas numéricas.
+- **Listras decorativas**: padrão vertical fino no header e footer (renderizado em jsPDF como múltiplos rects).
+- **Logo**: configurável (ver abaixo). Enquanto não houver logo enviado, mostra placeholder com inicial estilizada.
 
-**Fase B — Busca e filtros nas tabelas**
-1. Adicionar input de busca em `Eventos`, `Leads`, `Equipe` (filtra por nome em tempo real)
-2. Tornar headers de tabela ordenáveis (clicar em "Data", "Valor", "Status" alterna asc/desc)
-3. Empty states com CTA: "Nenhum evento ainda. Criar primeiro evento →"
+### Configurações da empresa
 
-**Fase C — Carregamento e feedback**
-1. Componente `<Skeleton>` nos KPIs do Dashboard, Caixa, Financeiro
-2. Skeleton rows nas tabelas durante loading
-3. Toast persistente quando uma query falha (botão "tentar novamente")
+Nova página `/configuracoes` (admin) com:
+- Nome da empresa, telefone, endereço completo, e-mail (opcional), CNPJ (opcional).
+- Upload do logo (Storage bucket `branding`, público).
+- Forma de pagamento padrão (texto livre que vai pro PDF).
 
-**Fase D — Modais melhores**
-1. Reorganizar form "Novo Evento" em seções (Identificação / Data e horário / Comercial / Observações) com separadores
-2. Auto-foco no primeiro campo ao abrir
-3. Tecla `Esc` fecha (já é padrão Radix), `Enter` em qualquer campo → submit
+Tabela `empresa_config` (singleton, 1 linha): `nome`, `telefone`, `endereco`, `email`, `cnpj`, `logo_url`, `forma_pagamento_padrao`.
 
-**Fase E — Detalhes (baixo esforço, alto valor)**
-1. Indicador "Atualizado há X seg" nos dashboards (com botão refresh)
-2. Tornar KPIs do Dashboard navegáveis (clicar em "Faturamento" → vai pro Financeiro)
-3. Atalho global `Cmd/Ctrl + K` abre paleta de busca (eventos + navegação)
-4. Animar transições entre rotas (já tem fade-in, manter)
+### Banco de dados
+
+Migração única:
+
+1. `ALTER TYPE lead_status ADD VALUE 'aceita'` (antes de `fechado`).
+2. Tabela `propostas`:
+   - `id`, `lead_id` (FK leads, CASCADE), `cardapio_id` (FK cardapios, SET NULL).
+   - `tom`, `conteudo` (jsonb com seções da IA), `numero_convidados` (int), `valor_por_pessoa`, `valor_total` (numeric).
+   - `forma_pagamento` (text), `observacoes` (text).
+   - `status` (`enviada` | `aceita` | `convertida` | `cancelada`), `evento_id` (nullable FK).
+   - `pdf_url` (text), `created_at`.
+3. Tabela `empresa_config` (1 linha): campos acima.
+4. Bucket Storage **`propostas`** (privado) — PDFs gerados.
+5. Bucket Storage **`branding`** (público) — logo da empresa.
+6. RLS:
+   - `propostas`: SELECT/INSERT para `authenticated`; UPDATE/DELETE só admin.
+   - `empresa_config`: SELECT para `authenticated`; UPDATE/INSERT/DELETE só admin.
+7. Trigger `fn_proposta_atualiza_lead`: ao inserir proposta, se lead estiver em `novo`/`contato_realizado`, atualiza para `proposta_enviada`.
 
 ### Detalhes técnicos
 
-- Toda mudança usa tokens semânticos do design system (sem cores hardcoded)
-- `shadcn/ui` já tem `Sidebar` e `Skeleton` instalados
-- Paleta de comando usa `Command` do shadcn (já presente em `ui/command.tsx`)
-- Persistência em `localStorage` via hook simples
-- Fases são independentes — pode aprovar tudo ou só algumas
+- **Rotas (`App.tsx`)**: `/propostas`, `/propostas/nova`, `/propostas/:id`, `/configuracoes`.
+- **Sidebar**: adicionar `{ to: "/propostas", label: "Propostas", icon: FileText }` e `{ to: "/configuracoes", label: "Configurações", icon: Settings }` (apenas admin para configurações).
+- **Componente `PropostaGenerator`** (`src/components/PropostaGenerator.tsx`): wrapper compartilhado da chamada à edge function + edição + download. Reutilizado em `LeadDetail` (mantém botão lá) e `/propostas/nova|/:id`.
+- **PDF (`src/lib/generatePropostaPdf.ts`)**: novo gerador em jsPDF (já usado em `generateCardapioPdf.ts`). Recebe `{ proposta, lead, cardapio, empresa }` e desenha o layout acima. Carrega logo do Storage como base64.
+- **Edge function `generate-proposta`**: contrato preservado. Adicionar pequeno ajuste no schema da IA para incluir `forma_pagamento` e `observacoes_finais` (campos que faltam no PDF). Sem nenhuma quebra no chamador atual.
+- **Persistência ao baixar PDF**: ordem das operações (1) gerar PDF blob → (2) `INSERT propostas` → (3) upload em `propostas/{proposta_id}.pdf` → (4) `UPDATE propostas SET pdf_url` → (5) trigger atualiza lead. Em caso de erro no upload, faz rollback do insert.
+- **`LeadDetail.tsx`**: passa a usar `PropostaGenerator` com `lead_id`. Botão "Marcar proposta como aceita" aparece quando o lead está em `proposta_enviada`.
+- **`EventoDetail.tsx`**: remover `TabsTrigger value="proposta"` e `TabsContent value="proposta"` (linhas ~103, ~111) e o componente `PropostaTab` (linhas ~960+).
+- **Conversão**: na página `/propostas/:id`, botão "Converter em evento" cria evento (mesmo padrão do `Leads.tsx`), atualiza `propostas.evento_id`, `propostas.status='convertida'` e `leads.status='fechado'`.
+- **Formatadores**: adicionar `aceita: "Aceita"` em `leadStatusLabels` e cor `bg-success/10 text-success border-success/20`.
+
+### Fora de escopo
+
+- Versionamento de propostas (cada PDF = registro novo).
+- Link público para o cliente aceitar online.
+- Templates múltiplos de PDF — por enquanto só este layout.
 
 ### Estimativa
 
-- Fase A: 1 iteração média
-- Fase B: 1 iteração (3 tabelas similares)
-- Fase C: 1 iteração curta
-- Fase D: 1 iteração curta
-- Fase E: 1 iteração média (paleta de busca é o item mais complexo)
-
-Sugestão: começar por A + B + C que entregam o maior salto perceptível. D e E ficam para um segundo round.
+- Migração + buckets + tipos: 1 iteração curta.
+- Página `/configuracoes` + upload de logo: 1 iteração curta.
+- Página `/propostas` (lista) + `/propostas/:id`: 1 iteração média.
+- Wizard `/propostas/nova` com mini-forms inline: 1 iteração média.
+- `PropostaGenerator` + `generatePropostaPdf` + integração no `LeadDetail` + remoção do evento: 1 iteração média.
