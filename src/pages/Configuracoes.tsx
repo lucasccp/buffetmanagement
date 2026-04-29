@@ -14,7 +14,7 @@ import { Navigate } from "react-router-dom";
 
 export default function Configuracoes() {
   const qc = useQueryClient();
-  const { isAdmin, isLoading: roleLoading } = useRole();
+  const { isAdmin, loading: roleLoading } = useRole();
   const [form, setForm] = useState<Record<string, any>>({});
   const [uploading, setUploading] = useState(false);
 
