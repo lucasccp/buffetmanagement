@@ -141,6 +141,8 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
   const W = 210;
   const H = 297;
   const accent = hexToRgb(empresa.cor_destaque);
+  const cardapioItens = uniqueMenuItems(data.cardapio_itens ?? []);
+  const cardapioIntro = sanitizeCardapioIntro(data.cardapio, cardapioItens);
 
   // ─────────── HEADER (página 1) ───────────
   const headerH = 50;
@@ -330,16 +332,16 @@ export async function generatePropostaPdf(data: PropostaPdfData, empresa: Propos
     y += 6;
   }
 
-  if (data.cardapio) {
-    drawBody(data.cardapio);
+  if (cardapioIntro) {
+    drawBody(cardapioIntro);
     y += 2;
   }
 
-  if (data.cardapio_itens.length) {
+  if (cardapioItens.length) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(...TEXT_BODY);
-    data.cardapio_itens.forEach((item) => {
+    cardapioItens.forEach((item) => {
       ensureSpace(6);
       doc.text(`•  ${item}`, BULLET_X, y);
       y += 4.8;
